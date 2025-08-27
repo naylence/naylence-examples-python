@@ -1,0 +1,509 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+a2a_agent.py
+agent_ping_pong.py
+agent_with_bg_task.py
+docker-compose.yml
+echo_agent.py
+function_as_agent.py
+rpc_agent.py
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="a2a_agent.py">
+import asyncio
+
+from naylence.fame.core import FameFabric
+
+from naylence.agent import (
+    Agent,
+    BaseAgent,
+    Message,
+    Task,
+    TaskSendParams,
+    TaskState,
+    make_task,
+)
+
+
+async def main():
+    # --- Define a minimal agent with a single RPC method ---
+    class SimpleA2AAgent(BaseAgent):
+        """
+        A trivial agent that immediately returns a completed task
+        with a hardcoded result. Used for basic testing and SDK demos.
+        """
+
+        async def start_task(self, params: TaskSendParams) -> Task:
+            """
+            Simulates task handling by returning a COMPLETED task instantly.
+            """
+            return make_task(
+                id=params.id,
+                state=TaskState.COMPLETED,
+                payload={"result": "Hello!"},
+            )
+
+    # --- Start a FameFabric transport layer and serve the agent ---
+    async with FameFabric.create() as fabric:
+        # Register the SimpleAgent with the fabric and get its address.
+        # In real deployments, this would happen in the agent runtime process.
+        agent_address = await fabric.serve(SimpleA2AAgent("simple-agent"))
+        print(f"Agent address: {agent_address}")
+
+        # Resolve a remote proxy to the agent.
+        # This simulates a client or external caller invoking the agent.
+        remote = Agent.remote_by_address(agent_address)
+
+        # Send a new task to the remote agent using its JSON-RPC method.
+        # This call is fully typed and asynchronous.
+        result = await remote.start_task(
+            params=TaskSendParams(
+                id="my task #1",
+                message=Message(role="agent", parts=[]),  # empty message payload
+            )
+        )
+
+        print(f"Result: {result}")
+        assert result.status.state == TaskState.COMPLETED
+
+
+# Entry point for running this script directly.
+if __name__ == "__main__":
+    asyncio.run(main())
+</file>
+
+<file path="agent_ping_pong.py">
+import asyncio
+
+from naylence.fame.core import FameAddress, FameFabric
+
+from naylence.agent import (
+    Agent,
+    BaseAgent,
+    Task,
+    TaskSendParams,
+    TaskState,
+    first_text_part,
+    make_task,
+    make_task_params,
+)
+
+
+async def main():
+    # -----------------------------------------------------------------------------
+    # 1. Define the "Pong" agent using start_task(), returning TextPart replies
+    # -----------------------------------------------------------------------------
+    class PongAgent(BaseAgent):
+        """
+        A PongAgent that implements the A2A start_task() method. Whenever it
+        receives a TaskSendParams, it immediately returns a Task in COMPLETED state,
+        echoing back the incoming text inside a TextPart under data["reply"].
+        """
+
+        async def start_task(self, params: TaskSendParams) -> Task:
+            """
+            RPC method start_task:
+              • params.id       → unique task ID
+              • params.message  → Message(role="agent", parts=[Part, ...])
+
+            Behavior:
+              1. Extract the incoming_text from params.message.parts[0].text
+              2. Construct reply_text = f"Pong: {incoming_text}"
+              3. Return a Task with
+                    state=COMPLETED
+                    data={"reply": TextPart(type="text", text=reply_text, metadata=None)}
+            """
+            # 1. Get the first TextPart from the incoming message
+            incoming_text = first_text_part(params.message)
+
+            # 2. Build the reply string
+            reply_text = f"Pong: {incoming_text}"
+
+            # 3. Wrap the reply in a TextPart and return a completed Task
+            return make_task(
+                id=params.id,
+                state=TaskState.COMPLETED,
+                payload=reply_text,
+            )
+
+    # -----------------------------------------------------------------------------
+    # 2. Define the "Ping" agent using start_task(), forwarding TextPart
+    # -----------------------------------------------------------------------------
+    class PingAgent(BaseAgent):
+        """
+        A PingAgent that, upon receiving its own start_task() invocation,
+        obtains a proxy to PongAgent and forwards the TaskSendParams unchanged.
+        It then returns the Task that PongAgent produces.
+        """
+
+        def __init__(self, name: str, pong_address: FameAddress):
+            """
+            :param name:        Unique identifier for this PingAgent
+            :param pong_address: Fame address string where PongAgent is served
+            """
+            super().__init__(name)
+            self._pong_address = pong_address
+
+        async def start_task(self, params: TaskSendParams) -> Task:
+            """
+            RPC method start_task:
+              • params.id      → unique task ID
+              • params.message → Message(role="agent", parts=[TextPart, ...])
+
+            Behavior:
+              1. Create a proxy to PongAgent via Agent.remote(self._pong_address).
+              2. Call pong_proxy.start_task(params) and await its Task.
+              3. Return that Task to the original caller.
+            """
+            # 1. Obtain a proxy to the remote PongAgent
+            pong_proxy = Agent.remote_by_address(self._pong_address)
+
+            # 2. Forward the same TaskSendParams (including TextPart) to PongAgent.start_task()
+            pong_task: Task = await pong_proxy.start_task(params)
+
+            # 3. Return PongAgent’s Task (with state and data fields)
+            return pong_task
+
+    # -----------------------------------------------------------------------------
+    # 3. Spin up the FameFabric and serve both agents
+    # -----------------------------------------------------------------------------
+    async with FameFabric.create() as fabric:
+        # 3a. Serve PongAgent first to get its address
+        pong_address = await fabric.serve(PongAgent("pong-agent"))
+        print(f"[main] PongAgent is listening at: {pong_address}")
+
+        # 3b. Serve PingAgent, passing the PongAgent address so PingAgent can locate it
+        ping_address = await fabric.serve(PingAgent("ping-agent", pong_address))
+        print(f"[main] PingAgent is listening at: {ping_address}")
+
+        # -----------------------------------------------------------------------------
+        # 4. From "main", get a proxy to PingAgent and call start_task()
+        # -----------------------------------------------------------------------------
+        ping_proxy = Agent.remote_by_address(ping_address)
+
+        # Build a TaskSendParams with:
+        #  • id="task-123"
+        #  • message=Message(role="agent", parts=[TextPart(...)])
+        ping_params = make_task_params(id="task-123", payload="Hello, Pong!")
+
+        # Invoke PingAgent.start_task(); PingAgent will forward
+        # to PongAgent.start_task() and return PongAgent’s Task result
+        result_task: Task = await ping_proxy.start_task(ping_params)
+
+        # -----------------------------------------------------------------------------
+        # 5. Inspect the returned Task object
+        # -----------------------------------------------------------------------------
+        print("[main] Received Task from PingAgent:")
+        print(f"       id:    {result_task.id}")
+        print(f"       state: {result_task.status.state}")
+
+        assert result_task.status.message
+        reply_part = first_text_part(result_task.status.message)
+        print(f"       reply: {reply_part}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+</file>
+
+<file path="agent_with_bg_task.py">
+import asyncio
+
+from naylence.fame.core import FameFabric
+
+from naylence.agent import (
+    Agent,
+    BaseAgent,
+    Message,
+    Task,
+    TaskQueryParams,
+    TaskSendParams,
+    TaskState,
+    make_task,
+)
+
+
+async def main():
+    # --- Define an agent that supports background task execution ---
+    class BackgroundTaskAgent(BaseAgent):
+        """
+        A minimal agent that handles long-running tasks by simulating
+        work in the background. Task state can be queried at any time.
+        """
+
+        def __init__(self, *args):
+            super().__init__(*args)
+            self._tasks: dict[str, TaskState] = {}
+
+        async def start_task(self, params: TaskSendParams) -> Task:
+            """
+            Starts a background task identified by `params.id`.
+            Immediately returns a Task object with WORKING state.
+            """
+            self._tasks[params.id] = TaskState.WORKING
+            asyncio.create_task(self._run_background_job(params.id))
+            return make_task(id=params.id, state=TaskState.WORKING, payload={})
+
+        async def _run_background_job(self, task_id: str):
+            """
+            Simulates long-running work by sleeping, then marks
+            the task as completed.
+            """
+            await asyncio.sleep(0.1)
+            self._tasks[task_id] = TaskState.COMPLETED
+
+        async def get_task_status(self, params: TaskQueryParams) -> Task:
+            """
+            Returns the current state of a task by ID.
+            If not found, returns UNKNOWN.
+            """
+            state = self._tasks.get(params.id, TaskState.UNKNOWN)
+            return make_task(id=params.id, state=state, payload={})
+
+    # --- Create a fabric instance (transport layer) ---
+    async with FameFabric.create() as fabric:
+        # Register the agent with the fabric and obtain its Fame address.
+        # In real applications, this happens in a long-running agent process.
+        agent_address = await fabric.serve(BackgroundTaskAgent("background-agent"))
+        print(f"Agent address: {agent_address}")
+
+        # In another process or component, resolve a proxy to the remote agent.
+        # The `Agent.remote()` call returns a strongly-typed RPC proxy.
+        remote = Agent.remote_by_address(agent_address)
+
+        # Create a new task by calling `start_task` on the remote agent proxy.
+        task_id = "my task #1"
+        first_result = await remote.start_task(
+            params=TaskSendParams(id=task_id, message=Message(role="agent", parts=[]))
+        )
+        print(f"Start task result: {first_result}")
+
+        # Immediately query the task status.
+        status_immediate = await remote.get_task_status(TaskQueryParams(id=task_id))
+        print(f"Immediate status: {status_immediate}")
+        assert status_immediate.status.state == TaskState.WORKING
+
+        # Wait long enough for the background job to complete.
+        await asyncio.sleep(0.2)
+
+        # Query again — task should now be marked as COMPLETED.
+        final_status = await remote.get_task_status(TaskQueryParams(id=task_id))
+        print(f"Final status: {final_status}")
+        assert final_status.status.state == TaskState.COMPLETED
+
+
+if __name__ == "__main__":
+    # Entrypoint for local execution.
+    asyncio.run(main())
+</file>
+
+<file path="docker-compose.yml">
+x-images: &images
+  base: &base-image ghcr.io/naylence/agent-sdk-base:0.1.8
+
+services:
+  echo-agent:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "echo_agent.py"]
+
+  rpc-agent:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "rpc_agent.py"]
+
+  function-as-agent:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "function_as_agent.py"]
+
+  agent-with-background-task:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "agent_with_bg_task.py"]
+
+
+  a2a-agent:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "a2a_agent.py"]
+
+
+  agent-ping-pong:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "agent_ping_pong.py"]
+</file>
+
+<file path="echo_agent.py">
+import asyncio
+from typing import Any
+
+from naylence.fame.core import FameFabric
+
+from naylence.agent import Agent, BaseAgent
+
+
+class EchoAgent(BaseAgent):
+    async def run_task(self, payload: Any, id: Any) -> Any:
+        return payload
+
+
+async def main():
+    # --- Start a FameFabric session and serve the agent ---
+    async with FameFabric.create() as fabric:
+        # Register the SimpleAgent with the fabric and get its address.
+        # In real deployments, this would happen in the agent runtime process.
+        agent_address = await fabric.serve(EchoAgent())
+
+        # Resolve a remote proxy to the agent.
+        # This simulates a client or external caller invoking the agent.
+        remote = Agent.remote_by_address(agent_address)
+
+        # Send a new task to the remote agent.
+        result = await remote.run_task(payload="Hello, World!")
+        print(result)
+
+
+# Entry point for running this script directly.
+if __name__ == "__main__":
+    asyncio.run(main())
+</file>
+
+<file path="function_as_agent.py">
+import asyncio
+from datetime import datetime, timezone
+from typing import Any
+
+from naylence.fame.core import FameFabric
+
+from naylence.agent import Agent
+
+
+async def main():
+    async with FameFabric.create() as fabric:
+
+        async def time_agent(payload: Any, id: Any) -> Any:
+            return datetime.now(timezone.utc).isoformat()
+
+        agent_address = await fabric.serve(Agent.from_handler(time_agent))
+        remote = Agent.remote_by_address(agent_address)
+
+        result = await remote.run_task(payload="Hello")
+        print(f"Time: {result}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+</file>
+
+<file path="rpc_agent.py">
+import asyncio
+
+from naylence.fame.core import FameFabric
+from naylence.fame.service import operation
+from naylence.agent import Agent, BaseAgent
+from naylence.fame.util.logging import enable_logging
+
+enable_logging(log_level="warning")  # Enable trace logging for debugging
+
+
+class SimpleAgent(BaseAgent):
+    @operation  # exposed as "add"
+    async def add(self, x: int, y: int) -> int:
+        return x + y
+
+    @operation(
+        name="fib_stream", streaming=True
+    )  # exposed as "fib_stream" with streaming enabled
+    async def fib(self, n: int):
+        a, b = 0, 1
+        for _ in range(n):
+            yield a
+            a, b = b, a + b
+
+
+async def main():
+    # --- Start a FameFabric session and serve the agent ---
+    async with FameFabric.create() as fabric:
+        # Register the SimpleAgent with the fabric and get its address.
+        # In real deployments, this would happen in the agent runtime process.
+        agent_address = await fabric.serve(SimpleAgent())
+
+        # Resolve a remote proxy to the agent.
+        # This simulates a client or external caller invoking the agent.
+        agent = Agent.remote_by_address(agent_address)
+
+        # Send a new task to the remote agent.
+        print(await agent.add(x=3, y=4))
+
+        async for v in await agent.fib_stream(_stream=True, n=10):
+            print(v, end=" ")
+        print()
+
+
+# Entry point for running this script directly.
+if __name__ == "__main__":
+    asyncio.run(main())
+</file>
+
+</files>
