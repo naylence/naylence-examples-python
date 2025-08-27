@@ -1,0 +1,203 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+cancellable_agent.py
+client.py
+common.py
+docker-compose.yml
+sentinel.py
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="cancellable_agent.py">
+import asyncio
+
+from common import AGENT_ADDR
+
+from naylence.agent import (
+    Artifact,
+    BackgroundTaskAgent,
+    DataPart,
+    TaskSendParams,
+    TaskState,
+    dev_mode,
+)
+
+
+class CancellableAgent(BackgroundTaskAgent):
+    async def run_background_task(self, params: TaskSendParams) -> None:
+        max_steps = 10
+        for i in range(1, max_steps):
+            task_state = await self.get_task_state(params.id)
+            if task_state == TaskState.CANCELED:
+                break
+            progress = i / max_steps
+            print(f"Task {params.id} progress changed to: {progress}")
+            await self.update_task_artifact(
+                params.id,
+                Artifact(parts=[DataPart(data={"progress": progress})]),
+            )
+            await asyncio.sleep(0.5)
+
+
+if __name__ == "__main__":
+    asyncio.run(
+        CancellableAgent().aserve(
+            AGENT_ADDR, root_config=dev_mode.NODE_CONFIG, log_level="info"
+        )
+    )
+</file>
+
+<file path="client.py">
+from __future__ import annotations
+
+import asyncio
+from common import AGENT_ADDR
+
+from naylence.fame.core import FameFabric, generate_id
+
+from naylence.agent import (
+    Agent,
+    DataPart,
+    TaskArtifactUpdateEvent,
+    TaskIdParams,
+    TaskStatusUpdateEvent,
+    make_task_params,
+)
+from naylence.agent.dev_mode import CLIENT_CONFIG
+
+
+async def main():
+    async with FameFabric.create(root_config=CLIENT_CONFIG):
+        agent = Agent.remote_by_address(AGENT_ADDR)
+        task_id = generate_id()
+
+        await agent.start_task(make_task_params(id=task_id))
+
+        updates = await agent.subscribe_to_task_updates(make_task_params(id=task_id))
+
+        async for evt in updates:
+            if isinstance(evt, TaskStatusUpdateEvent):
+                print(f"[STATUS] {evt.status.state}")
+            elif isinstance(evt, TaskArtifactUpdateEvent):
+                part = evt.artifact.parts[0]
+                assert isinstance(part, DataPart)
+                progress = part.data["progress"]
+                print(f"[DATA ] progress: {progress}")
+                if progress >= 0.5:
+                    print(f"Canceling task {task_id}")
+                    await agent.cancel_task(TaskIdParams(id=task_id))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+</file>
+
+<file path="common.py">
+AGENT_ADDR = "cancellable@fame.fabric"
+</file>
+
+<file path="docker-compose.yml">
+x-images: &images
+  base: &base-image ghcr.io/naylence/agent-sdk-base:0.1.8
+
+services:
+  # Sentinel service - runs the central coordinator on port 8000
+  sentinel:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    ports:
+      - "8000:8000"
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+
+  # Cancellable Agent service - connects to sentinel and provides cancellable functionality
+  cancellable-agent:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "cancellable_agent.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+
+    restart: unless-stopped
+
+networks:
+  naylence-net:
+    driver: bridge
+</file>
+
+<file path="sentinel.py">
+import asyncio
+from naylence.fame.sentinel import Sentinel
+from naylence.agent import dev_mode
+
+
+if __name__ == "__main__":
+    asyncio.run(Sentinel.aserve(root_config=dev_mode.SENTINEL_CONFIG, log_level="info"))
+</file>
+
+</files>

@@ -160,15 +160,15 @@ async def main(
     skip_browser = no_browser or is_running_in_docker()
 
     if url_only and result.get("url"):
-        url = result['url']
-        
+        url = result["url"]
+
         # Print prominent success message with URL
-        print(f"\n🎨 Image generated successfully!")
+        print("\n🎨 Image generated successfully!")
         print(f"🔗 Image URL: {url}")
-        print(f"⏰ Note: URL expires after 1 hour\n")
-        
+        print("⏰ Note: URL expires after 1 hour\n")
+
         logger.info(f"Image URL: {url}")
-        
+
         if not skip_browser:
             logger.info("Opening URL in browser...")
             webbrowser.open(url)
@@ -179,15 +179,15 @@ async def main(
     elif result.get("b64_json"):
         filepath = save_image(result, output_dir)
         abs_path = filepath.resolve()
-        
+
         # Print prominent success message with file location
-        print(f"\n🎨 Image generated successfully!")
+        print("\n🎨 Image generated successfully!")
         print(f"📁 Saved to: {abs_path}")
         print(f"📂 Directory: {abs_path.parent}")
         print(f"📄 Filename: {abs_path.name}\n")
-        
+
         logger.info(f"Image saved to: {abs_path}")
-        
+
         if not skip_browser:
             logger.info("Opening image in browser...")
             webbrowser.open(abs_path.as_uri())
