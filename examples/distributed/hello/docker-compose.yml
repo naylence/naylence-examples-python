@@ -1,0 +1,22 @@
+x-images: &images
+  base: &base-image ghcr.io/naylence/agent-sdk-base:0.1.8
+
+services:
+
+  # Echo Agent service - provides echo functionality
+  echo-agent:
+    image: *base-image
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "echo_agent.py"]
+    networks:
+      - naylence-net
+
+    restart: unless-stopped
+
+networks:
+  naylence-net:
+    driver: bridge

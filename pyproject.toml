@@ -1,0 +1,28 @@
+[project]
+name = "naylence-examples-python"
+version = "0.1.0"
+description = "Naylence Examples"
+authors = [
+    {name = "naylencedev"}
+]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "naylence-agent-sdk (>=0.1.8,<0.2.0)",
+    "openai (>=1.101.0,<2.0.0)",
+]
+
+[[tool.poetry.source]]
+name = "testpypi"
+url = "https://test.pypi.org/simple"
+priority = "supplemental"
+
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.12.10"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
