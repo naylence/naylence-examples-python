@@ -1,0 +1,39 @@
+x-images: &images
+  base: &base-image ghcr.io/naylence/agent-sdk-base:0.1.7
+
+services:
+
+  llm-agent:
+    build: .
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "llm_agent.py"]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+  chat-agent:
+    build: .
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "chat_agent.py"]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+  image-agent:
+    build: .
+    volumes:
+      - .:/work:ro
+      - ./generated_images:/work/generated_images  # Mount output directory
+    working_dir: /work
+    command: [
+      "python", "image_generation_agent.py",
+      "--prompt", "${IMAGE_PROMPT:-A serene landscape with mountains and a flowing river at sunset}",
+      "--size", "${IMAGE_SIZE:-512x512}",
+      "--output-dir", "${OUTPUT_DIR:-generated_images}",
+      "--no-browser"
+    ]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+

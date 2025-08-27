@@ -1,0 +1,572 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+chat_agent.py
+docker-compose.yml
+Dockerfile
+image_generation_agent.py
+llm_agent.py
+view_images.py
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="chat_agent.py">
+import asyncio
+import os
+from typing import Dict, List
+
+from naylence.fame.core import FameFabric, generate_id
+from openai import AsyncOpenAI
+
+from naylence.agent import (
+    Agent,
+    BaseAgent,
+    Task,
+    TaskSendParams,
+    TaskState,
+    first_text_part,
+    make_task,
+)
+
+# shared OpenAI client
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise RuntimeError("Set OPENAI_API_KEY first.")
+client = AsyncOpenAI(api_key=openai_api_key)
+
+
+class ChatAgent(BaseAgent):
+    def __init__(self):
+        super().__init__()
+        # history per sessionId
+        self._histories: Dict[str, List[Dict[str, str]]] = {}
+
+    async def start_task(self, params: TaskSendParams) -> Task:
+        # identify conversation
+        session = params.sessionId
+        history = self._histories.setdefault(session, [])
+
+        # pull out the user text
+        user_msg = params.message.parts[0]
+        text = getattr(user_msg, "text", "") or ""
+
+        history.append({"role": "user", "content": text})
+
+        # how many back-and-forths to keep?
+        n = params.historyLength or 10
+        messages = [{"role": "system", "content": "You are a helpful assistant."}]
+        messages += history[-n:]
+
+        # call the LLM
+        resp = await client.chat.completions.create(
+            model="gpt-5-mini",
+            messages=messages,  # type: ignore
+        )
+        answer = resp.choices[0].message.content or ""
+
+        history.append({"role": "assistant", "content": answer})
+        # trim so we don’t grow unbounded
+        self._histories[session] = history[-(n * 2) :]
+
+        # return a Task with the same sessionId
+        return make_task(
+            id=params.id,
+            session_id=session,
+            state=TaskState.COMPLETED,
+            payload=answer,
+        )
+
+
+async def main():
+    # spin up Fame
+    async with FameFabric.create() as fabric:
+        agent_addr = await fabric.serve(ChatAgent())
+        remote = Agent.remote_by_address(agent_addr)
+
+        # fixed session for this REPL
+        session_id = generate_id()
+
+        print("🔹 Chat (type 'exit' to quit)")
+        loop = asyncio.get_event_loop()
+        while True:
+            try:
+                question = await loop.run_in_executor(None, input, "Q> ")
+            except (EOFError, KeyboardInterrupt):
+                print("\nGoodbye!")
+                break
+
+            if not (q := question.strip()) or q.lower() in ("exit", "quit"):
+                break
+
+            # send via A2A start_task, supplying our session_id and historyLength=10
+            task = await remote.start_task(
+                id=generate_id(),
+                payload=q,
+                session_id=session_id,
+                history_length=10,
+            )
+
+            # extract the assistant’s reply
+            text = first_text_part(task.status.message)  # TextPart guaranteed
+            print(f"A> {text}\n")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+</file>
+
+<file path="docker-compose.yml">
+x-images: &images
+  base: &base-image ghcr.io/naylence/agent-sdk-base:0.1.7
+
+services:
+
+  llm-agent:
+    build: .
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "llm_agent.py"]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+  chat-agent:
+    build: .
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "chat_agent.py"]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+  image-agent:
+    build: .
+    volumes:
+      - .:/work:ro
+      - ./generated_images:/work/generated_images  # Mount output directory
+    working_dir: /work
+    command: [
+      "python", "image_generation_agent.py",
+      "--prompt", "${IMAGE_PROMPT:-A serene landscape with mountains and a flowing river at sunset}",
+      "--size", "${IMAGE_SIZE:-512x512}",
+      "--output-dir", "${OUTPUT_DIR:-generated_images}",
+      "--no-browser"
+    ]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+</file>
+
+<file path="Dockerfile">
+FROM ghcr.io/naylence/agent-sdk-base:0.1.8
+
+# Install additional packages required for LLM examples
+RUN pip install --no-cache-dir \
+    openai \
+    python-dotenv \
+    pillow \
+    numpy \
+    anthropic \
+    tiktoken
+
+WORKDIR /work
+</file>
+
+<file path="image_generation_agent.py">
+import argparse
+import asyncio
+import base64
+import os
+import webbrowser
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Literal, Optional
+
+import openai
+from naylence.fame.core import FameFabric
+from naylence.fame.util import logging
+
+from naylence.agent import Agent, BaseAgent
+
+logging.enable_logging(log_level="warning")
+
+
+logger = logging.getLogger(__name__)
+
+# Load environment variables
+default_output_dir = "generated_images"
+
+IMAGE_MODEL = "dall-e-2"
+PROMPT_ENHANCEMENT_MODEL = "gpt-4.1-mini"
+
+
+class ImageGenerationAgent(BaseAgent):
+    """
+    An agent that generates images using OpenAI's DALL-E 2 model.
+    """
+
+    def __init__(self, api_key: Optional[str] = None):
+        super().__init__()
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "OpenAI API key is required. Set it in .env file or pass it to the constructor."
+            )
+        self.client = openai.AsyncOpenAI(api_key=self.api_key)
+
+        self.image_generation_prompt = """
+        You are a creative image generation assistant. Given a text prompt, 
+        you will help create a detailed image generation prompt that will work well with DALL-E 2.
+        Consider:
+        1. Visual details and composition
+        2. Style and artistic direction
+        3. Lighting and atmosphere
+        4. Color palette and mood
+        
+        Prompt size must NOT exceed 1000 chars.
+        """
+
+    async def run_task(self, payload: Any, id: Any) -> Any:
+        user_prompt = payload["prompt"]
+        image_size = payload.get("size", "512x512")
+        fmt = payload.get("response_format", "b64_json")
+        logger.info(f"Received task with prompt: {user_prompt}")
+
+        enhanced_prompt = await self._enhance_prompt(user_prompt)
+        return await self._generate_image(
+            enhanced_prompt, size=image_size, response_format=fmt
+        )
+
+    async def _enhance_prompt(self, user_prompt: str) -> str:
+        try:
+            logger.info(f"Enhancing prompt: {user_prompt}")
+            response = await self.client.chat.completions.create(
+                model=PROMPT_ENHANCEMENT_MODEL,
+                messages=[
+                    {"role": "system", "content": self.image_generation_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+            )
+            enhanced_prompt = response.choices[0].message.content
+            assert enhanced_prompt
+            logger.info(f"Enhanced prompt: {enhanced_prompt}")
+
+            if len(enhanced_prompt) > 1000:
+                logger.warning(
+                    f"Enhanced prompt too long ({len(enhanced_prompt)} chars), truncating to 1000 chars"
+                )
+                enhanced_prompt = enhanced_prompt[:997] + "..."
+            return enhanced_prompt
+
+        except Exception as e:
+            logger.error(f"Error enhancing prompt: {e}")
+            return (
+                (user_prompt[:997] + "...") if len(user_prompt) > 1000 else user_prompt
+            )
+
+    async def _generate_image(
+        self,
+        prompt: str,
+        size: Literal["256x256", "512x512", "512x512"] = "512x512",
+        response_format: Literal["url", "b64_json"] = "b64_json",
+    ) -> Dict[str, Any]:
+        try:
+            logger.info(
+                f"Generating image with size {size} and format {response_format}"
+            )
+            response = await self.client.images.generate(
+                model=IMAGE_MODEL,
+                prompt=prompt,
+                n=1,
+                response_format=response_format,
+                size=size,  # type: ignore
+            )
+            assert response.data
+            image_obj = response.data[0]
+            if response_format == "url":
+                # Use attribute access on Image object
+                return {"url": image_obj.url, "prompt": prompt, "size": size}
+            else:
+                return {"b64_json": image_obj.b64_json, "prompt": prompt, "size": size}
+        except Exception as e:
+            logger.error(f"Error generating image: {e}")
+            return {"error": str(e), "status": "error"}
+
+
+def save_image(result: Any, output_dir: Path) -> Path:
+    prompt = result.get("prompt", "image")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_prompt = "".join(
+        c for c in prompt[:30] if c.isalnum() or c in (" ", "-", "_")
+    ).strip()
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    filepath = output_dir / f"{timestamp}_{safe_prompt}.png"
+
+    img_bytes = base64.b64decode(result["b64_json"])
+    with open(filepath, "wb") as f:
+        f.write(img_bytes)
+    return filepath
+
+
+def is_running_in_docker() -> bool:
+    """Check if we're running inside a Docker container."""
+    return (
+        Path("/.dockerenv").exists()
+        or os.getenv("DISPLAY") == ""
+        or os.getenv("DOCKER_CONTAINER") == "true"
+    )
+
+
+async def main(
+    prompt: str, size: str, output_dir: Path, url_only: bool, no_browser: bool
+):
+    async with FameFabric.create() as fabric:
+        agent_addr = await fabric.serve(ImageGenerationAgent())
+        remote = Agent.remote_by_address(agent_addr)
+        payload = {
+            "prompt": prompt,
+            "size": size,
+            "response_format": "url" if url_only else "b64_json",
+        }
+        result: Any = await remote.run_task(payload=payload)
+
+    # Check if we should skip browser opening
+    skip_browser = no_browser or is_running_in_docker()
+
+    if url_only and result.get("url"):
+        url = result['url']
+        
+        # Print prominent success message with URL
+        print(f"\n🎨 Image generated successfully!")
+        print(f"🔗 Image URL: {url}")
+        print(f"⏰ Note: URL expires after 1 hour\n")
+        
+        logger.info(f"Image URL: {url}")
+        
+        if not skip_browser:
+            logger.info("Opening URL in browser...")
+            webbrowser.open(url)
+        else:
+            logger.info(
+                "Browser opening disabled (running in Docker or --no-browser specified)"
+            )
+    elif result.get("b64_json"):
+        filepath = save_image(result, output_dir)
+        abs_path = filepath.resolve()
+        
+        # Print prominent success message with file location
+        print(f"\n🎨 Image generated successfully!")
+        print(f"📁 Saved to: {abs_path}")
+        print(f"📂 Directory: {abs_path.parent}")
+        print(f"📄 Filename: {abs_path.name}\n")
+        
+        logger.info(f"Image saved to: {abs_path}")
+        
+        if not skip_browser:
+            logger.info("Opening image in browser...")
+            webbrowser.open(abs_path.as_uri())
+        else:
+            logger.info(
+                "Browser opening disabled (running in Docker or --no-browser specified)"
+            )
+    else:
+        logger.error("No valid image data returned.")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generate an image using DALL-E 2 via Naylence ImageGenerationAgent"
+    )
+    parser.add_argument(
+        "-p",
+        "--prompt",
+        type=str,
+        help="Text prompt for image generation",
+        default="A serene landscape with mountains and a flowing river at sunset",
+    )
+    parser.add_argument(
+        "-s",
+        "--size",
+        type=str,
+        choices=["256x256", "512x512", "1024x1024"],
+        help="Image size",
+        default="512x512",
+    )
+    parser.add_argument(
+        "-o",
+        "--output-dir",
+        type=str,
+        help="Directory to save generated images",
+        default=default_output_dir,
+    )
+    parser.add_argument(
+        "-u",
+        "--url-only",
+        action="store_true",
+        help="Do not save locally; open the image URL returned by the API instead",
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Do not open the generated image in a browser (useful for Docker/headless environments)",
+    )
+    args = parser.parse_args()
+    out_dir = Path(args.output_dir)
+    asyncio.run(
+        main(
+            prompt=args.prompt,
+            size=args.size,
+            output_dir=out_dir,
+            url_only=args.url_only,
+            no_browser=args.no_browser,
+        )
+    )
+</file>
+
+<file path="llm_agent.py">
+import asyncio
+import os
+from typing import Any
+
+from naylence.fame.core import FameFabric
+from openai import AsyncOpenAI
+
+from naylence.agent import Agent
+
+
+# ----------------------------------------------------------------------------
+# 1) Create a shared AsyncOpenAI client (reuse across calls).
+# ----------------------------------------------------------------------------
+# Make sure your OPENAI_API_KEY is set in env, e.g.:
+#   export OPENAI_API_KEY="sk-…"
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise RuntimeError("Set OPENAI_API_KEY in your environment first.")
+client = AsyncOpenAI(api_key=openai_api_key)
+
+
+# ----------------------------------------------------------------------------
+# 2) Define an async handler that uses AsyncOpenAI for Q&A.
+# ----------------------------------------------------------------------------
+async def qa_agent(payload: Any, id: Any) -> Any:
+    """
+    payload:    the question string
+    id:         the task ID (unused here, but could be logged)
+    Returns:    the model's answer (string)
+
+    Uses AsyncOpenAI to send a ChatCompletion request.
+    """
+    # Build a minimal “system + user” chat prompt
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": str(payload)},
+    ]
+    # Call AsyncOpenAI’s chat.completions.create(...)
+    response = await client.chat.completions.create(
+        model="gpt-5-mini",
+        messages=messages,  # type: ignore
+    )
+    # Extract the assistant’s reply text
+    return response.choices[0].message.content
+
+
+# ----------------------------------------------------------------------------
+# 3) Spin up FameFabric, serve our function‐agent, and invoke it remotely.
+# ----------------------------------------------------------------------------
+async def main():
+    async with FameFabric.create() as fabric:
+        # Wrap qa_agent into a BaseAgent subclass on the fly
+        agent_address = await fabric.serve(Agent.from_handler(qa_agent))
+        remote = Agent.remote_by_address(agent_address)
+
+        # Ask a question via the proxy’s run_task()
+        question = "What year did the first moon landing occur?"
+        answer = await remote.run_task(payload=question)
+        print(f"Q: {question}\nA: {answer}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+</file>
+
+<file path="view_images.py">
+#!/usr/bin/env python3
+"""
+Simple HTTP server to view generated images
+Run this after generating images to view them in your browser
+"""
+
+import http.server
+import socketserver
+import webbrowser
+from pathlib import Path
+
+PORT = 8000
+DIRECTORY = "generated_images"
+
+if __name__ == "__main__":
+    Path(DIRECTORY).mkdir(exist_ok=True)
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=DIRECTORY, **kwargs)
+
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        print(f"🖼️  Image viewer running at http://localhost:{PORT}")
+        print(f"📂 Serving images from: {Path(DIRECTORY).absolute()}")
+        print("Press Ctrl+C to stop")
+
+        try:
+            webbrowser.open(f"http://localhost:{PORT}")
+        except:
+            pass
+
+        httpd.serve_forever()
+</file>
+
+</files>
