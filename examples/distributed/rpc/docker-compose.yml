@@ -23,13 +23,13 @@ services:
       start_period: 0.5s
       start_interval: 1s
 
-  # Echo Agent service - connects to sentinel and provides echo functionality
-  echo-agent:
+  # Math Agent service - connects to sentinel and provides math functionality
+  math-agent:
     image: *base-image
     volumes:
       - .:/work:ro
     working_dir: /work
-    command: ["python", "echo_agent.py"]
+    command: ["python", "math_agent.py"]
     depends_on:
       sentinel:
         condition: service_healthy
@@ -38,7 +38,7 @@ services:
     environment:
       - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
 
-    restart: unless-stopped
+  #   restart: unless-stopped
 
 networks:
   naylence-net:
