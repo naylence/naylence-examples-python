@@ -1,0 +1,85 @@
+x-images: &images
+  base: &base-image 
+    build: .
+
+services:
+  # Sentinel service - runs the central coordinator on port 8000
+  sentinel:
+    build: .
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    ports:
+      - "8000:8000"
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+
+  # Analysis Agent service - connects to sentinel and provides analysis functionality
+  analysis-agent:
+    build: .
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "analysis_agent.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+    restart: unless-stopped
+
+
+  # Sentiment Agent service - connects to sentinel and provides sentiment analysis functionality
+  sentiment-agent:
+    build: .
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentiment_agent.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+    restart: unless-stopped
+
+
+  # Sentiment Agent service - connects to sentinel and provides summarization
+  summarizer-agent:
+    build: .
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "summarizer_agent.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+    restart: unless-stopped
+
+networks:
+  naylence-net:
+    driver: bridge
