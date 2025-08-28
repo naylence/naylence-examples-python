@@ -1,0 +1,75 @@
+x-images: &images
+  base: &base-image ghcr.io/naylence/agent-sdk-base:0.1.11
+
+services:
+  # Sentinel reverse proxy
+  caddy:
+    image: caddy:2
+    ports: 
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/data:/data
+    depends_on:
+      - sentinel-internal
+    networks:
+      naylence-net:
+        aliases:
+          - sentinel
+          - oauth2-server
+
+  # OAuth2 server - shouldn't be connected to directly.
+  # This is for dev purposes only, do not use in production
+  oauth2-server-internal:
+    image: *base-image
+    # ports: 
+    #   - "8099:8099"
+    command: ["python", "-m", "naylence.fame.fastapi.oauth2_server"]
+    networks:
+      - naylence-net
+    env_file:
+      - .env.oauth2-server
+
+  # Real sentinel - shouldn't be connected to directly
+  sentinel-internal:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    # ports:
+    #   - "8000:8000"
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+    env_file:
+      - .env.sentinel
+
+  # # Math Agent service - connects to sentinel and provides math functionality
+  math-agent:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "math_agent.py"]
+    depends_on:
+      sentinel-internal:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    env_file:
+      - .env.agent
+
+  #   restart: unless-stopped
+
+networks:
+  naylence-net:
+    driver: bridge

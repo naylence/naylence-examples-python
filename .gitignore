@@ -45,3 +45,5 @@ tmp/
 
 # Ruff
 .ruff_cache/
+
+**/caddy/data/
