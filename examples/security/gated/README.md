@@ -173,6 +173,15 @@ FAME_ADMISSION_CLIENT_SECRET=<YOUR_TEST_CLIENT_SECRET>
 FAME_JWT_AUDIENCE=fame.fabric
 ```
 
+
+## Dev OAuth2 server env vars reference (.env.oauth2-server)
+
+```ini
+FAME_JWT_TRUSTED_ISSUER=https://oauth2-server
+FAME_JWT_CLIENT_ID=<YOUR_TEST_CLIENT_ID>
+FAME_JWT_CLIENT_SECRET=YOUR_TEST_CLIENT_SECRET>
+FAME_JWT_AUDIENCE=fame.fabric
+```
 ---
 
 ## Sentinel env vars reference (.env.sentinel)
