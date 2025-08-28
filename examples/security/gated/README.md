@@ -144,8 +144,8 @@ Example `.env.client`:
 FAME_ADMISSION_PROFILE=direct
 FAME_DIRECT_ADMISSION_URL=wss://localhost/fame/v1/attach/ws/downstream
 FAME_ADMISSION_TOKEN_URL=https://localhost/oauth/token
-FAME_ADMISSION_CLIENT_ID=demo-client
-FAME_ADMISSION_CLIENT_SECRET=demo-secret
+FAME_ADMISSION_CLIENT_ID=<YOUR_TEST_CLIENT_ID>
+FAME_ADMISSION_CLIENT_SECRET=<YOUR_TEST_CLIENT_SECRET>
 FAME_JWT_AUDIENCE=fame.fabric
 SSL_CERT_FILE=./caddy/data/caddy/pki/authorities/local/root.crt
 ```
@@ -168,8 +168,8 @@ SSL_CERT_FILE=/work/caddy/data/caddy/pki/authorities/local/root.crt
 FAME_DIRECT_ADMISSION_URL=wss://sentinel/fame/v1/attach/ws/downstream
 FAME_ADMISSION_PROFILE=direct
 FAME_ADMISSION_TOKEN_URL=https://oauth2-server/oauth/token
-FAME_ADMISSION_CLIENT_ID=test-client-id
-FAME_ADMISSION_CLIENT_SECRET=test-client-secret
+FAME_ADMISSION_CLIENT_ID=<YOUR_TEST_CLIENT_ID>
+FAME_ADMISSION_CLIENT_SECRET=<YOUR_TEST_CLIENT_SECRET>
 FAME_JWT_AUDIENCE=fame.fabric
 ```
 
