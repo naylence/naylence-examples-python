@@ -19,7 +19,21 @@ This example demonstrates how to protect a Naylence fabric using **OAuth2 client
 * Configuring security and admission with **profiles** instead of raw config.
 
 ---
+## Why so many files?
 
+You’ll notice this example has more moving parts than the earlier ones. In practice, we could have just checked demo credentials straight into git and everything would work out-of-the-box.
+
+We deliberately chose not to do that. Even though these credentials would only ever be test values, checking secrets into version control is a bad security practice. To stay true to Naylence’s security philosophy, we instead generate unique credentials at setup time and distribute them into the appropriate .env.* files.
+
+That decision adds a few extra files, but it also keeps the example aligned with real-world security hygiene:
+
+- No static secrets in git
+
+- Clear separation of roles (client, agent, sentinel, OAuth2 server)
+
+- Automation via Make/generator script so you don’t have to manage values by hand
+
+---
 ## Components
 
 * **docker-compose.yml** — runs all long-lived services:
