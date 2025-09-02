@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image ghcr.io/naylence/agent-sdk-base:0.1.7
+  base: &base-image naylence/agent-sdk-python
 
 services:
 

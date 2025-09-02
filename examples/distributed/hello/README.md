@@ -91,7 +91,7 @@ docker run --rm \
   -v "$PWD:/work:ro" -w /work \
   --network "$(basename "$PWD")_naylence-net" \
   -e FAME_DIRECT_ADMISSION_URL="ws://echo-agent:8000/fame/v1/attach/ws/downstream" \
-  ghcr.io/naylence/agent-sdk-base:0.1.8 \
+  naylence/agent-sdk-python \
   python client.py
 ```
 

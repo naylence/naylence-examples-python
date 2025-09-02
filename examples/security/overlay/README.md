@@ -148,13 +148,15 @@ docker compose down --remove-orphans
 Example `.env.client`:
 
 ```ini
+SSL_CERT_FILE=./caddy/data/caddy/pki/authorities/local/root.crt
+
 FAME_ADMISSION_PROFILE=direct
 FAME_DIRECT_ADMISSION_URL=wss://localhost/fame/v1/attach/ws/downstream
 FAME_ADMISSION_TOKEN_URL=https://localhost/oauth/token
 FAME_ADMISSION_CLIENT_ID=<YOUR_TEST_CLIENT_ID>
 FAME_ADMISSION_CLIENT_SECRET=<YOUR_TEST_CLIENT_SECRET>
+FAME_JWT_TRUSTED_ISSUER=https://oauth2-server
 FAME_JWT_AUDIENCE=fame.fabric
-SSL_CERT_FILE=./caddy/data/caddy/pki/authorities/local/root.crt
 ```
 
 * **FAME\_ADMISSION\_PROFILE** — admission mode (`direct` means connect directly to sentinel using a JWT).
@@ -172,11 +174,13 @@ The agent uses the **same variables as the client**, but since it runs inside Do
 
 ```ini
 SSL_CERT_FILE=/work/caddy/data/caddy/pki/authorities/local/root.crt
+
 FAME_DIRECT_ADMISSION_URL=wss://sentinel/fame/v1/attach/ws/downstream
 FAME_ADMISSION_PROFILE=direct
 FAME_ADMISSION_TOKEN_URL=https://oauth2-server/oauth/token
 FAME_ADMISSION_CLIENT_ID=<YOUR_TEST_CLIENT_ID>
 FAME_ADMISSION_CLIENT_SECRET=<YOUR_TEST_CLIENT_SECRET>
+FAME_JWT_TRUSTED_ISSUER=https://oauth2-server
 FAME_JWT_AUDIENCE=fame.fabric
 ```
 

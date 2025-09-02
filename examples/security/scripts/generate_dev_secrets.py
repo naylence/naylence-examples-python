@@ -45,7 +45,21 @@ dev_clients = {
 }
 write_file(SECRETS_DIR / "oauth2-clients.json", json.dumps(dev_clients, indent=2))
 
-# 2) Materialize .env files from the .example templates
+# 2) Check for PKI files and prepare PKI variables
+pki_dir = OUTPUT_DIR / "pki"
+pki_mapping = {}
+if pki_dir.exists():
+    pki_mapping["PKI_ROOT_CA_CERT"] = str((pki_dir / "root-ca.crt").absolute())
+    pki_mapping["PKI_ROOT_CA_KEY"] = str((pki_dir / "root-ca.key").absolute())
+    pki_mapping["PKI_INTERMEDIATE_CA_CERT"] = str((pki_dir / "intermediate-ca.crt").absolute())
+    pki_mapping["PKI_INTERMEDIATE_CA_KEY"] = str((pki_dir / "intermediate-ca.key").absolute())
+    pki_mapping["PKI_INTERMEDIATE_CHAIN"] = str((pki_dir / "intermediate-chain.crt").absolute())
+    pki_mapping["PKI_COMPLETE_CHAIN"] = str((pki_dir / "complete-chain.crt").absolute())
+    print(f"📋 Found PKI directory: {pki_dir}")
+else:
+    print(f"⚠️  No PKI directory found at {pki_dir}, PKI variables will be empty")
+
+# 3) Materialize .env files from the .example templates
 def expand_template(example_name, out_name, mapping):
     src = TEMPLATE_DIR / example_name
     dst = OUTPUT_DIR / out_name
@@ -63,14 +77,23 @@ def expand_template(example_name, out_name, mapping):
 expand_template(".env.client.example", ".env.client", {
     "DEV_CLIENT_ID": client_id,
     "DEV_CLIENT_SECRET": client_secret,
+    **pki_mapping,
 })
 expand_template(".env.agent.example", ".env.agent", {
     "DEV_CLIENT_ID": client_id,
     "DEV_CLIENT_SECRET": client_secret,
+    **pki_mapping,
 })
 expand_template(".env.oauth2-server.example", ".env.oauth2-server", {
     "DEV_CLIENT_ID": client_id,
     "DEV_CLIENT_SECRET": client_secret,
+    **pki_mapping,
+})
+expand_template(".env.ca.example", ".env.ca", {
+    **pki_mapping,
+})
+expand_template(".env.welcome.example", ".env.welcome", {
+    **pki_mapping,
 })
 # sentinel has no secrets to inject; just copy template if not present
 dst = OUTPUT_DIR / ".env.sentinel"

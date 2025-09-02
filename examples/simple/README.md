@@ -78,7 +78,7 @@ Or run a one‑off container for a given script:
 ```bash
 docker run --rm \
   -v "$PWD:/work:ro" -w /work \
-  ghcr.io/naylence/agent-sdk-base:0.1.8 \
+  naylence/agent-sdk-python \
   python rpc_agent.py
 ```
 

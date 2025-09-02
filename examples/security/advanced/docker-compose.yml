@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-python
+  base: &base-image naylence/agent-sdk-adv-python:0.1.17
 
 services:
   # Sentinel reverse proxy
@@ -11,12 +11,14 @@ services:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/data:/data
     depends_on:
-      - sentinel-internal
+      - ca-internal
     networks:
       naylence-net:
         aliases:
           - sentinel
           - oauth2-server
+          - welcome
+          - ca
 
   # OAuth2 server - shouldn't be connected to directly.
   # This is for dev purposes only, do not use in production
@@ -30,11 +32,39 @@ services:
     env_file:
       - .env.oauth2-server
 
+
+  ca-internal:
+    image: *base-image
+    # ports: 
+    #   - "8099:8099"
+    command: ["python", "-m", "naylence.fame.security.cert.ca_server"]
+    networks:
+      - naylence-net
+    volumes:
+      - .:/work:ro
+      - ./certs:/etc/fame/certs:ro
+    env_file:
+      - .env.ca
+
+  welcome-internal:
+    image: *base-image
+    # ports: 
+    #   - "8099:8099"
+    command: ["python", "-m", "naylence.fame.welcome.node_welcome_server"]
+    networks:
+      - naylence-net
+    volumes:
+      - .:/work:ro
+      - .welcome.yml:/etc/fame/fame-config.yml:ro
+    env_file:
+      - .env.welcome
+
   # Real sentinel - shouldn't be connected to directly
   sentinel-internal:
     image: *base-image
     volumes:
       - .:/work:ro
+      - ./certs:/etc/fame/certs:ro
     working_dir: /work
     command: ["python", "sentinel.py"]
     # ports:
@@ -50,14 +80,16 @@ services:
       retries: 10
       start_period: 0.5s
       start_interval: 1s
+      
     env_file:
       - .env.sentinel
 
-  # # Math Agent service - connects to sentinel and provides math functionality
+  # Math Agent service - connects to sentinel and provides math functionality
   math-agent:
     image: *base-image
     volumes:
       - .:/work:ro
+      - ./certs:/etc/fame/certs:ro
     working_dir: /work
     command: ["python", "math_agent.py"]
     depends_on:
@@ -68,7 +100,7 @@ services:
     env_file:
       - .env.agent
 
-  #   restart: unless-stopped
+  # #   restart: unless-stopped
 
 networks:
   naylence-net:
