@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-adv-python:0.1.17
+  base: &base-image naylence/agent-sdk-adv-python:0.1.21
 
 services:
   # Sentinel reverse proxy
@@ -8,8 +8,8 @@ services:
     ports: 
       - "443:443"
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./caddy/data:/data
+      - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./config/caddy/data:/data
     depends_on:
       - ca-internal
     networks:
@@ -30,7 +30,7 @@ services:
     networks:
       - naylence-net
     env_file:
-      - .env.oauth2-server
+      - config/.env.oauth2-server
 
 
   ca-internal:
@@ -42,9 +42,10 @@ services:
       - naylence-net
     volumes:
       - .:/work:ro
-      - ./certs:/etc/fame/certs:ro
+      - ./config/certs:/etc/fame/certs:ro
+      - ./config/ca.yml:/etc/fame/fame-config.yml:ro
     env_file:
-      - .env.ca
+      - config/.env.ca
 
   welcome-internal:
     image: *base-image
@@ -55,16 +56,16 @@ services:
       - naylence-net
     volumes:
       - .:/work:ro
-      - .welcome.yml:/etc/fame/fame-config.yml:ro
+      - ./config/welcome.yml:/etc/fame/fame-config.yml:ro
     env_file:
-      - .env.welcome
+      - config/.env.welcome
 
   # Real sentinel - shouldn't be connected to directly
   sentinel-internal:
     image: *base-image
     volumes:
       - .:/work:ro
-      - ./certs:/etc/fame/certs:ro
+      - ./config/certs:/etc/fame/certs:ro
     working_dir: /work
     command: ["python", "sentinel.py"]
     # ports:
@@ -82,14 +83,14 @@ services:
       start_interval: 1s
       
     env_file:
-      - .env.sentinel
+      - config/.env.sentinel
 
   # Math Agent service - connects to sentinel and provides math functionality
   math-agent:
     image: *base-image
     volumes:
       - .:/work:ro
-      - ./certs:/etc/fame/certs:ro
+      - ./config/certs:/etc/fame/certs:ro
     working_dir: /work
     command: ["python", "math_agent.py"]
     depends_on:
@@ -98,7 +99,7 @@ services:
     networks:
       - naylence-net
     env_file:
-      - .env.agent
+      - config/.env.agent
 
   # #   restart: unless-stopped
 

@@ -1,6 +1,13 @@
 # Multi‑Agent Text Analysis Pipeline
 
-This example demonstrates a **distributed multi‑agent pipeline** with Naylence. Multiple agents collaborate to analyze text: one agent summarizes, another evaluates sentiment, and a third orchestrates them and combines results. A client then consumes the aggregated analysis.
+This example demonstrates a **distributed multi‑agent pipeline** with Naylence. Multiple agents collaborate to analyze text: one agent summarizes, ano## Troubleshooting
+
+* **Missing API key** → **REQUIRED:** Set `OPENAI_API_KEY` in your shell before running. Get your key from https://platform.openai.com/api-keys
+* **Agents don't connect** → start sentinel first; ensure `FAME_DIRECT_ADMISSION_URL` is set.
+* **Results empty** → check OpenAI model availability; override with `MODEL_NAME` env var.
+* **API quota exceeded** → check your OpenAI account usage and billing at https://platform.openai.com/usageevaluates sentiment, and a third orchestrates them and combines results. A client then consumes the aggregated analysis.
+
+> 🔑 **Requirements:** This example requires an **OpenAI API key** as the agents use OpenAI's API for text analysis.
 
 ```
 request: client ──▶ sentinel ──▶ analysis-agent ──┬─▶ summarizer-agent
@@ -38,7 +45,47 @@ reply:   client ◀─ sentinel ◀───────────────
 
 ---
 
-## Quick start (Docker Compose)
+## Quick start
+
+> **Prerequisites:** 
+> - Docker + Docker Compose installed
+> - **OpenAI API key** (required for text analysis)
+
+**First, set your OpenAI API key:**
+
+```bash
+export OPENAI_API_KEY="sk-..."  # ⚠️ REQUIRED - get from https://platform.openai.com/api-keys
+```
+
+From this example folder:
+
+```bash
+make start       # 🚀 brings up the stack (sentinel + three agents)
+```
+
+Run the sample client against the analysis agent:
+
+```bash
+make run         # ▶️ executes client.py
+```
+
+Shut down when done:
+
+```bash
+make stop        # ⏹ stop containers
+```
+
+### See envelope traffic
+
+Use the verbose target to print every **envelope** as it travels through the fabric:
+
+```bash
+make run-verbose
+```
+
+---
+
+## Alternative: Quick start (Docker Compose)
 
 1. **Start services**
 

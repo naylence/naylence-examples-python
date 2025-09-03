@@ -32,7 +32,39 @@ updates: client ◀─ sentinel ◀─ cancellable-agent (status/artifacts)
 
 ---
 
-## Quick start (Docker Compose)
+## Quick start
+
+> Requirements: Docker + Docker Compose installed.
+
+From this example folder:
+
+```bash
+make start       # 🚀 brings up the stack (sentinel + cancellable-agent)
+```
+
+Run the sample client against the cancellable agent:
+
+```bash
+make run         # ▶️ executes client.py
+```
+
+Shut down when done:
+
+```bash
+make stop        # ⏹ stop containers
+```
+
+### See envelope traffic
+
+Use the verbose target to print every **envelope** as it travels through the fabric:
+
+```bash
+make run-verbose
+```
+
+---
+
+## Alternative: Quick start (Docker Compose)
 
 1. **Start services**
 
@@ -46,6 +78,12 @@ This starts:
 * **cancellable-agent** connected to the sentinel
 
 2. **Run the client (host)**
+
+```bash
+make run
+```
+
+or 
 
 ```bash
 export FAME_DIRECT_ADMISSION_URL="ws://localhost:8000/fame/v1/attach/ws/downstream"

@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-python:0.1.16
+  base: &base-image naylence/agent-sdk-python:0.1.21
 
 services:
   # Sentinel reverse proxy
@@ -8,8 +8,8 @@ services:
     ports: 
       - "443:443"
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./caddy/data:/data
+      - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./config/caddy/data:/data
     depends_on:
       - sentinel-internal
     networks:
@@ -28,7 +28,7 @@ services:
     networks:
       - naylence-net
     env_file:
-      - .env.oauth2-server
+      - config/.env.oauth2-server
 
   # Real sentinel - shouldn't be connected to directly
   sentinel-internal:
@@ -51,7 +51,7 @@ services:
       start_period: 0.5s
       start_interval: 1s
     env_file:
-      - .env.sentinel
+      - config/.env.sentinel
 
   # # Math Agent service - connects to sentinel and provides math functionality
   math-agent:
@@ -66,7 +66,7 @@ services:
     networks:
       - naylence-net
     env_file:
-      - .env.agent
+      - config/.env.agent
 
   #   restart: unless-stopped
 

@@ -35,9 +35,41 @@ Hello, World!
 
 ---
 
-## Running the Example
+## Quick start
 
-There are two ways to run the components:
+> Requirements: Docker + Docker Compose installed.
+
+From this example folder:
+
+```bash
+make start       # 🚀 brings up the stack (sentinel + echo-agent)
+```
+
+Run the sample client against the echo agent:
+
+```bash
+make run         # ▶️ executes client.py
+```
+
+Shut down when done:
+
+```bash
+make stop        # ⏹ stop containers
+```
+
+### See envelope traffic
+
+Use the verbose target to print every **envelope** as it travels through the fabric:
+
+```bash
+make run-verbose
+```
+
+---
+
+## Alternative: Running the Example
+
+There are two other ways to run the components:
 
 ### 1. Standalone Python
 
@@ -58,7 +90,7 @@ python client.py
 
 ---
 
-### 2. Docker Compose
+### 2. Docker Compose (manual)
 
 Start the echo agent via Compose:
 

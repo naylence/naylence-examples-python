@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-python
+  base: &base-image naylence/agent-sdk-python:0.1.21
 
 services:
   echo-agent:

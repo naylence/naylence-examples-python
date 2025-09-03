@@ -59,54 +59,73 @@ if pki_dir.exists():
 else:
     print(f"⚠️  No PKI directory found at {pki_dir}, PKI variables will be empty")
 
-# 3) Materialize .env files from the .example templates
-def expand_template(example_name, out_name, mapping):
-    src = TEMPLATE_DIR / example_name
-    dst = OUTPUT_DIR / out_name
-    
-    if not src.exists():
-        print(f"⚠️  Warning: Template file {src} not found, skipping {out_name}")
-        return
+# 3) Discover and materialize .env files from .example templates
+def expand_template(src_path, dst_path, mapping):
+    """Expand a template file by replacing variables with values."""
+    if not src_path.exists():
+        print(f"⚠️  Warning: Template file {src_path} not found, skipping {dst_path.name}")
+        return False
         
-    text = src.read_text(encoding="utf-8")
+    text = src_path.read_text(encoding="utf-8")
     for k, v in mapping.items():
         text = text.replace("${" + k + "}", v)
-    write_file(dst, text)
-    print(f"✅ Generated {out_name}")
+    write_file(dst_path, text)
+    print(f"✅ Generated {dst_path.relative_to(OUTPUT_DIR)}")
+    return True
 
-expand_template(".env.client.example", ".env.client", {
-    "DEV_CLIENT_ID": client_id,
-    "DEV_CLIENT_SECRET": client_secret,
-    **pki_mapping,
-})
-expand_template(".env.agent.example", ".env.agent", {
-    "DEV_CLIENT_ID": client_id,
-    "DEV_CLIENT_SECRET": client_secret,
-    **pki_mapping,
-})
-expand_template(".env.oauth2-server.example", ".env.oauth2-server", {
-    "DEV_CLIENT_ID": client_id,
-    "DEV_CLIENT_SECRET": client_secret,
-    **pki_mapping,
-})
-expand_template(".env.ca.example", ".env.ca", {
-    **pki_mapping,
-})
-expand_template(".env.welcome.example", ".env.welcome", {
-    **pki_mapping,
-})
-# sentinel has no secrets to inject; just copy template if not present
-dst = OUTPUT_DIR / ".env.sentinel"
-if not dst.exists():
-    template_src = TEMPLATE_DIR / ".env.sentinel.example"
-    if template_src.exists():
-        shutil.copyfile(template_src, dst)
-        print(f"✅ Generated .env.sentinel")
-    else:
-        print(f"⚠️  Warning: Template file {template_src} not found, skipping .env.sentinel")
+def discover_and_process_env_templates():
+    """Discover all .env.*.example files recursively and process them."""
+    # Find all .env.*.example files recursively in TEMPLATE_DIR
+    env_example_files = list(TEMPLATE_DIR.rglob(".env.*.example"))
+    
+    if not env_example_files:
+        print(f"⚠️  No .env.*.example files found in {TEMPLATE_DIR}")
+        return []
+    
+    print(f"🔍 Found {len(env_example_files)} .env.*.example files:")
+    
+    generated_files = []
+    
+    for template_file in sorted(env_example_files):
+        # Calculate relative path from TEMPLATE_DIR to maintain directory structure
+        rel_path = template_file.relative_to(TEMPLATE_DIR)
+        
+        # Generate output filename by removing .example suffix
+        output_filename = template_file.name.replace(".example", "")
+        output_path = OUTPUT_DIR / rel_path.parent / output_filename
+        
+        print(f"  📄 {rel_path} -> {output_path.relative_to(OUTPUT_DIR)}")
+        
+        # Determine which variables to use based on the filename
+        mapping = {}
+        
+        # Files that need OAuth credentials
+        if any(x in template_file.name for x in [".client.", ".agent.", ".sentinel.", ".oauth2-server."]):
+            mapping.update({
+                "DEV_CLIENT_ID": client_id,
+                "DEV_CLIENT_SECRET": client_secret,
+            })
+        
+        # All files get PKI mapping if available
+        mapping.update(pki_mapping)
+        
+        # Process the template
+        if expand_template(template_file, output_path, mapping):
+            generated_files.append(output_path.relative_to(OUTPUT_DIR))
+    
+    return generated_files
 
-print("✔ Generated dev credentials and .env files:")
-print(f"  - .env.client (client_id={client_id})")
-print(f"  - .env.agent  (client_id={client_id})")
-print(f"  - .env.sentinel")
+# Process all discovered templates
+generated_files = discover_and_process_env_templates()
+
+print("✔ Generated dev credentials and files:")
 print(f"  - .secrets/oauth2-clients.json")
+if generated_files:
+    for file_path in generated_files:
+        # Show client_id for files that use OAuth credentials
+        if any(x in str(file_path) for x in [".client", ".agent", ".sentinel", ".oauth2-server"]):
+            print(f"  - {file_path} (client_id={client_id})")
+        else:
+            print(f"  - {file_path}")
+else:
+    print("  - No .env files generated (no templates found)")

@@ -17,7 +17,7 @@ run-verbose:
 
 clean: stop
 	@echo "🧹 Cleaning generated files..."
-	@rm -rf .env.client .env.agent .env.oauth2-server .env.sentinel
+	@cd config && rm -rf .env.client .env.agent .env.oauth2-server .env.sentinel
 	@rm -rf ../.secrets
-	@rm -rf caddy/data
+	@rm -rf config/caddy/data
 	@echo "✅ Cleaned generated .env files and secrets directory"

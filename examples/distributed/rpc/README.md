@@ -39,7 +39,39 @@ The goal is to show that methods exposed with the **`@operation`** decorator beh
 
 ---
 
-## Quick start (Docker Compose)
+## Quick start
+
+> Requirements: Docker + Docker Compose installed.
+
+From this example folder:
+
+```bash
+make start       # 🚀 brings up the stack (sentinel + math-agent)
+```
+
+Run the sample client against the math agent (add/multiply/fib_stream):
+
+```bash
+make run         # ▶️ executes client.py
+```
+
+Shut down when done:
+
+```bash
+make stop        # ⏹ stop containers
+```
+
+### See envelope traffic
+
+Use the verbose target to print every **envelope** as it travels through the fabric:
+
+```bash
+make run-verbose
+```
+
+---
+
+## Alternative: Quick start (Docker Compose)
 
 1. **Start services**
 

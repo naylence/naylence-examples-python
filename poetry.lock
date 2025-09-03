@@ -814,18 +814,18 @@ files = [
 
 [[package]]
 name = "naylence-agent-sdk"
-version = "0.1.19"
+version = "0.1.21"
 description = "Naylence Agent SDK"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "naylence_agent_sdk-0.1.19-py3-none-any.whl", hash = "sha256:d6ae04a8be70ee3e0f9469cd2fa44d3bee119ace2cc12227407ccf3bf2d93a7b"},
-    {file = "naylence_agent_sdk-0.1.19.tar.gz", hash = "sha256:3162a696fa7c7d87a8e30e9d302742638c5442bbf247f59c4e558d4b9b9cc899"},
+    {file = "naylence_agent_sdk-0.1.21-py3-none-any.whl", hash = "sha256:a109e0370c11307d5a94ec034b6cc183de5134b97736602a6b60ac9dd7016833"},
+    {file = "naylence_agent_sdk-0.1.21.tar.gz", hash = "sha256:283b8604671bf82e4e8bf13b31475e896d556b53a7509e05d123a94f8825e93e"},
 ]
 
 [package.dependencies]
-naylence-runtime = ">=0.1.78"
+naylence-runtime = ">=0.1.82"
 
 [package.source]
 type = "legacy"
@@ -875,14 +875,14 @@ reference = "testpypi"
 
 [[package]]
 name = "naylence-runtime"
-version = "0.1.80"
+version = "0.1.82"
 description = "Naylence Runtime"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "naylence_runtime-0.1.80-py3-none-any.whl", hash = "sha256:845c75b1bc26f79ab3a5605fee70e8d55fe216acdb35bb78ff4344bba98715a5"},
-    {file = "naylence_runtime-0.1.80.tar.gz", hash = "sha256:e108c1ba68d87dbf0c23d81355c37a9b6abe5f6ff2dfe1218768174f70192d43"},
+    {file = "naylence_runtime-0.1.82-py3-none-any.whl", hash = "sha256:310a6bd397987929c31138e8d361b31f128295180215d1e58f04ec2bde3584f1"},
+    {file = "naylence_runtime-0.1.82.tar.gz", hash = "sha256:6a27539706dc815ce8ccf279f05a1b974b7222cce6aa45792b16f2e95190c592"},
 ]
 
 [package.dependencies]
@@ -905,14 +905,14 @@ reference = "testpypi"
 
 [[package]]
 name = "openai"
-version = "1.102.0"
+version = "1.104.2"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "openai-1.102.0-py3-none-any.whl", hash = "sha256:d751a7e95e222b5325306362ad02a7aa96e1fab3ed05b5888ce1c7ca63451345"},
-    {file = "openai-1.102.0.tar.gz", hash = "sha256:2e0153bcd64a6523071e90211cbfca1f2bbc5ceedd0993ba932a5869f93b7fc9"},
+    {file = "openai-1.104.2-py3-none-any.whl", hash = "sha256:0148951da12ea651f890ef38f8adef75b78c053dba37ea2bdba857c8945860d4"},
+    {file = "openai-1.104.2.tar.gz", hash = "sha256:9b582ead9dd208753f89dae8e36b6548c6ada076e87ba3db36630e29239661ab"},
 ]
 
 [package.dependencies]
@@ -1635,4 +1635,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "f2edaa962e3ba6ef02b70bdf84a98a8fdfa259e9e7dcc877bed5d0b5473de542"
+content-hash = "fd21effe13fe02aef0348629c2492dea2c921a68897e66f409b1fd9cd9d9400d"
