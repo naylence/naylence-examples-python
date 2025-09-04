@@ -39,9 +39,10 @@ def write_file(path, content):
         f.write(content)
 
 
-# 1) Generate dev OAuth clients (agent + client)
+# 1) Generate dev OAuth clients (agent + client) and HMAC secret
 client_id = rand_id("client")
 client_secret = rand_id("s")
+hmac_secret = secrets.token_urlsafe(32)  # Generate 256-bit HMAC secret
 
 # Optional: if your dev OAuth server reads a JSON file for clients:
 # (adapt to your server’s expected format)
@@ -129,6 +130,7 @@ def discover_and_process_env_templates():
                 {
                     "DEV_CLIENT_ID": client_id,
                     "DEV_CLIENT_SECRET": client_secret,
+                    "FAME_HMAC_SECRET": hmac_secret,
                 }
             )
 
@@ -154,7 +156,7 @@ if generated_files:
             x in str(file_path)
             for x in [".client", ".agent", ".sentinel", ".oauth2-server"]
         ):
-            print(f"  - {file_path} (client_id={client_id})")
+            print(f"  - {file_path} (client_id={client_id}, hmac_secret=***)")
         else:
             print(f"  - {file_path}")
 else:

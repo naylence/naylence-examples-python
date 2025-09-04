@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-adv-python:0.1.21
+  base: &base-image naylence/agent-sdk-adv-python:0.1.24
 
 services:
   # Sentinel reverse proxy

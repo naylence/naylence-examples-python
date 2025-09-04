@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-python:0.1.24
+  base: &base-image naylence/agent-sdk-python:0.1.25
 
 services:
   # Sentinel reverse proxy
@@ -16,6 +16,7 @@ services:
       naylence-net:
         aliases:
           - sentinel
+          - math-agent
           - oauth2-server
 
   # OAuth2 server - shouldn't be connected to directly.
@@ -54,10 +55,11 @@ services:
       - config/.env.sentinel
 
   # # Math Agent service - connects to sentinel and provides math functionality
-  math-agent:
+  math-agent-internal:
     image: *base-image
     volumes:
       - .:/work:ro
+      - ./config/math-agent-config.yml:/etc/fame/fame-config.yml:ro
     working_dir: /work
     command: ["python", "math_agent.py"]
     depends_on:
