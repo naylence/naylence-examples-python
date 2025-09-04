@@ -13,7 +13,7 @@ The end result: clients can keep using WebSockets (or HTTP) to talk to the senti
 
 * **Connector:** uses **HTTP** for agent ↔ sentinel instead of WebSockets.
 * **Two half‑duplex flows:** `downstream` and `upstream` HTTP routes together emulate full‑duplex.
-* **Reverse authorization:** sentinel callback is authorized via a **JWT (HMAC)** that the agent grants.
+* **Reverse authorization (stateless):** each callback HTTP request from sentinel ➜ agent includes a self-contained Bearer JWT (HMAC) granted by the agent; there is no session, every request is authenticated independently.
 * **Custom node config:** the agent runs from a **bespoke YAML config**, not `dev_mode` presets.
 * **Public URL override:** sets **`FAME_PUBLIC_URL`** so the agent advertises a hostname reachable **from the sentinel** inside Docker.
 * **Caddy mapping:** reverse proxy is configured for **both** WebSocket and HTTP ingress paths (for sentinel and agent).
@@ -27,7 +27,7 @@ The end result: clients can keep using WebSockets (or HTTP) to talk to the senti
 2. The **grant** includes a **Bearer JWT** signed using **HMAC**; the secret comes from `FAME_HMAC_SECRET`.
 3. The agent sends a **node attach** request **(downstream)** to the sentinel’s HTTP ingress.
 4. The sentinel validates the request and then establishes a **callback HTTP connection (upstream)** to the agent’s advertised URL.
-5. The callback uses the grant’s **JWT** (audience validated via `FAME_JWT_REVERSE_AUTH_AUDIENCE`).
+5. Each callback HTTP request carries a self-contained Bearer JWT signed with the agent’s HMAC key (audience validated via FAME_JWT_REVERSE_AUTH_AUDIENCE), so every request is authenticated independently; no session state is kept.
 6. With both links up, messages flow in both directions over HTTP (half‑duplex each way). Clients may still talk to the sentinel over **WebSockets**.
 
 ---
@@ -99,6 +99,16 @@ SSL_CERT_FILE=./config/caddy/.../root.crt
 ```
 
 ---
+
+## Stateless authentication (no sessions)
+
+There are no sticky sessions. Both downstream and upstream HTTP calls are authenticated per request via Bearer JWTs.
+
+Include standard claims like iat/exp and a narrow aud; keep TTLs tight and ensure clocks are in sync (NTP) to minimize replay windows.
+
+You may bind tokens to request context (e.g., method/path or an equivalent claim) to reduce replay surface within the TTL window.
+
+In environments requiring mutual auth without shared HMAC, enable strict-overlay and use SPIFFE/mTLS for certificate-bound identities while keeping HTTP transport.
 
 ## Running the example
 
