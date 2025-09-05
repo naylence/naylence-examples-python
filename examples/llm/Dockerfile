@@ -1,12 +1,6 @@
-FROM naylence/agent-sdk-python
+FROM naylence/agent-sdk-python:0.1.27
 
 # Install additional packages required for LLM examples
-RUN pip install --no-cache-dir \
-    openai \
-    python-dotenv \
-    pillow \
-    numpy \
-    anthropic \
-    tiktoken
+RUN pip install --no-cache-dir openai
 
 WORKDIR /work

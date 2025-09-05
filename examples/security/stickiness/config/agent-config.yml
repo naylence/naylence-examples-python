@@ -1,0 +1,10 @@
+node:
+  type: Node
+  requested_logicals:
+    - "*.fame.fabric"  # Important! Use a wildcard to enable load balancing!
+  security:
+    type: SecurityProfile
+    profile: ${env:FAME_SECURITY_PROFILE}
+  admission:
+    type: AdmissionProfile
+    profile: ${env:FAME_ADMISSION_PROFILE}

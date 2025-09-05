@@ -1,0 +1,63 @@
+x-images: &images
+  base: &base-image naylence/agent-sdk-python:0.1.27
+
+services:
+  # Sentinel service - runs the central coordinator on port 8000
+  sentinel:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    ports:
+      - "8000:8000"
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+
+  # Push Receiver service - connects to sentinel and provides push notification functionality
+  push-receiver:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "push_receiver.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+
+    restart: unless-stopped
+
+
+  push-sender:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "push_sender.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+
+    restart: unless-stopped
+
+
+networks:
+  naylence-net:
+    driver: bridge

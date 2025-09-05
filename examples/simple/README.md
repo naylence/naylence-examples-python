@@ -33,15 +33,19 @@ These examples run **agent and client in the same process**. They’re meant to 
 ## Prerequisites
 
 * **Python 3.12+** (recommended)
+* **make** (for using the convenient `make run` commands)
 * Project dependencies installed (e.g., `pip install -e .` from repo root, or `poetry install`) so that `naylence.agent` and `naylence.fame` are importable.
+* docker (if running the examples using docker)
 
-> Optional: You can also run any script inside a ready‑made container image (see **Run in Docker** below).
+> Optional: You can also run any script inside a ready‑made container image using Docker (see below).
 
 ---
 
-## Quick start (local Python)
+## Quick start
 
-Run any script directly:
+### Option 1: Direct Python execution
+
+Run any script directly (requires naylence-agent-sdk to be installed):
 
 ```bash
 python echo_agent.py
@@ -52,7 +56,26 @@ python a2a_agent.py
 python agent_ping_pong.py
 ```
 
-Expected behaviors:
+### Option 2: Using Make
+
+Use the convenient make command to run any script:
+
+```bash
+make run SCRIPT=echo_agent.py
+make run SCRIPT=function_as_agent.py
+make run SCRIPT=rpc_agent.py
+make run SCRIPT=agent_with_bg_task.py
+make run SCRIPT=a2a_agent.py
+make run SCRIPT=agent_ping_pong.py
+```
+
+If no script is specified, `echo_agent.py` will be used by default:
+
+```bash
+make run  # runs echo_agent.py
+```
+
+### Expected behaviors:
 
 * **echo\_agent.py** → prints `Hello, World!`
 * **function\_as\_agent.py** → prints an ISO timestamp (UTC)
@@ -65,20 +88,17 @@ Expected behaviors:
 
 ## Run in Docker (optional)
 
-A convenience `docker-compose.yml` is provided to run each script in an isolated container.
-
-Start one of the services, for example the RPC agent:
+You can also run scripts inside a container using the make command with Docker:
 
 ```bash
-docker compose up rpc-agent
-```
+# Run a specific script in Docker
+make run SCRIPT=echo_agent.py
+make run-verbose SCRIPT=rpc_agent.py  # with verbose output
 
-Or run a one‑off container for a given script:
-
-```bash
+# Or run directly with docker
 docker run --rm \
   -v "$PWD:/work:ro" -w /work \
-  naylence/agent-sdk-python \
+  naylence/agent-sdk-python:0.1.27 \
   python rpc_agent.py
 ```
 

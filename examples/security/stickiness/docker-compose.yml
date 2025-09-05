@@ -1,0 +1,125 @@
+x-images: &images
+  base: &base-image naylence/agent-sdk-adv-python:0.1.27
+
+services:
+  # Sentinel reverse proxy
+  caddy:
+    image: caddy:2
+    ports: 
+      - "443:443"
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./config/caddy/data:/data
+    depends_on:
+      - ca-internal
+    networks:
+      naylence-net:
+        aliases:
+          - sentinel
+          - oauth2-server
+          - welcome
+          - ca
+
+  # OAuth2 server - shouldn't be connected to directly.
+  # This is for dev purposes only, do not use in production
+  oauth2-server-internal:
+    image: *base-image
+    # ports: 
+    #   - "8099:8099"
+    command: ["python", "-m", "naylence.fame.fastapi.oauth2_server"]
+    networks:
+      - naylence-net
+    env_file:
+      - config/.env.oauth2-server
+
+
+  ca-internal:
+    image: *base-image
+    # ports: 
+    #   - "8099:8099"
+    command: ["python", "-m", "naylence.fame.security.cert.ca_server"]
+    networks:
+      - naylence-net
+    volumes:
+      - .:/work:ro
+      - ./config/certs:/etc/fame/certs:ro
+      - ./config/ca.yml:/etc/fame/fame-config.yml:ro
+    env_file:
+      - config/.env.ca
+
+  welcome-internal:
+    image: *base-image
+    # ports: 
+    #   - "8099:8099"
+    command: ["python", "-m", "naylence.fame.welcome.node_welcome_server"]
+    networks:
+      - naylence-net
+    volumes:
+      - .:/work:ro
+      - ./config/welcome.yml:/etc/fame/fame-config.yml:ro
+    env_file:
+      - config/.env.welcome
+
+  # Real sentinel - shouldn't be connected to directly
+  sentinel-internal:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+      - ./config/certs:/etc/fame/certs:ro
+      - ./config/sentinel-config.yml:/etc/fame/fame-config.yml:ro
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    # ports:
+    #   - "8000:8000"
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+      
+    env_file:
+      - config/.env.sentinel
+
+  math-agent-replica1:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+      - ./config/certs:/etc/fame/certs:ro
+      - ./config/agent-config.yml:/etc/fame/fame-config.yml:ro
+    working_dir: /work
+    command: ["python", "math_agent.py"]
+    depends_on:
+      sentinel-internal:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    env_file:
+      - config/.env.agent
+
+  math-agent-replica2:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+      - ./config/certs:/etc/fame/certs:ro
+      - ./config/agent-config.yml:/etc/fame/fame-config.yml:ro
+    working_dir: /work
+    command: ["python", "math_agent.py"]
+    depends_on:
+      sentinel-internal:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    env_file:
+      - config/.env.agent
+
+  # restart: unless-stopped
+
+networks:
+  naylence-net:
+    driver: bridge

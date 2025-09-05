@@ -1,0 +1,23 @@
+node:
+  type: Sentinel
+  id: "${env:FAME_NODE_ID:}"
+  public_url: "${env:FAME_PUBLIC_URL:}"
+  listeners:
+    - type: WebSocketListener
+      port: "${env:FAME_SENTINEL_PORT:8000}"
+  requested_logicals:
+    - fame.fabric
+  security:
+    type: SecurityProfile
+    profile: "${env:FAME_SECURITY_PROFILE:open}"
+  admission:
+    type: AdmissionProfile
+    profile: "${env:FAME_ADMISSION_PROFILE:none}"
+  storage:
+    type: StorageProfile
+    profile: "${env:STORAGE_PROFILE:memory}"
+
+  # Important: enabled advanced stickiness
+  stickiness:
+    type: AFTLoadBalancerStickinessManager
+    security_level: strict

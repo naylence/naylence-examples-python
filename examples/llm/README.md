@@ -30,22 +30,44 @@ This set of examples demonstrates how to use the Naylence Agent SDK to wrap **LL
 ## Prerequisites
 
 * **Python 3.11+**
-* Install requirements:
-
-  ```bash
-  pip install openai pillow numpy anthropic tiktoken python-dotenv
-  ```
-* Set your OpenAI API key:
+* **make** (for building the Docker image and running examples)
+* **Docker** (for containerized execution)
+* **OpenAI API key** - Set your OpenAI API key:
 
   ```bash
   export OPENAI_API_KEY="sk-…"
   ```
 
+For local Python execution, install requirements:
+```bash
+pip install openai pillow numpy anthropic tiktoken python-dotenv
+```
+
 ---
 
-## Running the examples (local Python)
+## Running the examples
 
-Run any script directly:
+### Option 1: Using Make (Recommended)
+
+First, build the custom Docker image that includes all LLM dependencies:
+
+```bash
+make build
+```
+
+Then run any script using make:
+
+```bash
+make run llm_agent.py
+make run chat_agent.py
+make run image_generation_agent.py
+```
+
+The make commands automatically handle Docker execution with the proper environment setup.
+
+### Option 2: Direct Python execution
+
+Run any script directly (requires dependencies to be installed locally):
 
 ```bash
 python llm_agent.py
@@ -62,17 +84,14 @@ python image_generation_agent.py --prompt "A dragon curled around a mountain" --
 
 ---
 
-## Running with Docker Compose
+## Docker Details
 
-A `docker-compose.yml` is provided to run agents in isolated containers. Example:
+The custom Docker image (built with `make build`) includes:
+- Base Naylence Agent SDK
+- OpenAI Python client
+- Additional LLM dependencies (pillow, numpy, anthropic, tiktoken, python-dotenv)
 
-```bash
-docker compose up llm-agent
-```
-
-This runs `llm_agent.py` inside the base image with your API key injected.
-
-The `image-agent` service mounts `./generated_images` to persist images.
+This ensures all examples run with the correct dependencies without requiring local installation.
 
 ---
 

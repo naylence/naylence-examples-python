@@ -1,0 +1,88 @@
+x-images: &images
+  base: &base-image naylence/agent-sdk-python:0.1.27
+
+services:
+
+
+  peer-sentinel1:
+    image: *base-image
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "peer_sentinel1.py"]
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+
+  peer-sentinel2:
+    image: *base-image
+    depends_on:
+      peer-sentinel1:
+        condition: service_healthy
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "peer_sentinel2.py"]
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+
+    environment:
+      - FAME_ADMISSION_PROFILE=open
+      - FAME_DIRECT_ADMISSION_URL=ws://peer-sentinel1:8000/fame/v1/attach/ws/downstream
+      - FAME_PEER_WS_URL=ws://peer-sentinel1:8000/fame/v1/attach/ws/peer
+      
+  math-agent1:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "math_agent1.py"]
+    depends_on:
+      peer-sentinel1:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_ADMISSION_PROFILE=open
+      - FAME_DIRECT_ADMISSION_URL=ws://peer-sentinel1:8000/fame/v1/attach/ws/downstream
+
+
+  math-agent2:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "math_agent2.py"]
+    depends_on:
+      peer-sentinel2:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_ADMISSION_PROFILE=open
+      - FAME_DIRECT_ADMISSION_URL=ws://peer-sentinel2:8000/fame/v1/attach/ws/downstream
+
+  #   restart: unless-stopped
+
+networks:
+  naylence-net:
+    driver: bridge

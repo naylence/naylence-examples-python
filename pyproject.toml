@@ -1,6 +1,6 @@
 [project]
 name = "naylence-examples-python"
-version = "0.1.4"
+version = "0.1.5"
 description = "Naylence Examples"
 authors = [
     {name = "naylencedev"}
@@ -9,7 +9,7 @@ license = {text = "Apache-2.0"}
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "naylence-agent-sdk (>=0.1.24,<0.2.0)",
+    "naylence-agent-sdk (>=0.1.27,<0.2.0)",
     "openai (>=1.101.0,<2.0.0)",
     "dotenv (>=0.9.9,<0.10.0)",
 ]
@@ -18,7 +18,6 @@ dependencies = [
 name = "testpypi"
 url = "https://test.pypi.org/simple"
 priority = "supplemental"
-
 
 
 [tool.poetry.group.dev.dependencies]

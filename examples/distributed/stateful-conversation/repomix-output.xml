@@ -1,0 +1,300 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+chat_agent.py
+client.py
+common.py
+docker-compose.yml
+Dockerfile
+Makefile
+sentinel.py
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="chat_agent.py">
+import asyncio
+from typing import Dict, List
+
+from openai import BaseModel
+from pydantic import Field
+
+from common import AGENT_ADDR, get_openai_client, get_model_name
+
+from naylence.fame.service import operation
+from naylence.agent import (
+    BaseAgent,
+    Task,
+    TaskSendParams,
+    TaskState,
+    dev_mode,
+    make_task,
+    first_data_part,
+)
+from naylence.fame.util import logging
+
+logger = logging.getLogger(__name__)
+
+
+client = get_openai_client()
+
+
+class ConversationState(BaseModel):
+    system_prompt: str
+    history: List[Dict[str, str]] = Field(default_factory=list)
+    max_history_length: int = 10
+
+
+class ChatAgent(BaseAgent):
+    def __init__(self):
+        super().__init__()
+        self._states: Dict[str, ConversationState] = {}
+
+    async def start_task(self, params: TaskSendParams) -> Task:
+        if params.id in self._states:
+            raise ValueError(f"Duplicate task: {params.id}")
+
+        self._states[params.id] = ConversationState.model_validate(
+            first_data_part(params.message)
+        )
+
+        logger.info("started_conversation", task_id=params.id)
+
+        return make_task(id=params.id, state=TaskState.WORKING, payload="")
+
+    @operation
+    async def run_turn(self, task_id: str, user_message: str) -> str:
+        state = self._states.get(task_id)
+        if not state:
+            raise ValueError(f"Invalid task: {task_id}")
+
+        state.history.append({"role": "user", "content": user_message})
+
+        # how many back-and-forths to keep?
+        n = state.max_history_length or 10
+        messages = [{"role": "system", "content": state.system_prompt}]
+        messages += state.history[-n:]
+
+        # call the LLM
+        resp = await client.chat.completions.create(
+            model=get_model_name(),
+            messages=messages,  # type: ignore
+        )
+
+        answer = resp.choices[0].message.content or ""
+
+        state.history.append({"role": "assistant", "content": answer})
+        # trim so we don’t grow unbounded
+        state.history = state.history[-(n * 2) :]
+
+        return answer
+
+    @operation
+    async def end_conversation(self, task_id: str):
+        self._states.pop(task_id, None)
+        logger.info("finished_conversation", task_id=task_id)
+
+
+if __name__ == "__main__":
+    asyncio.run(
+        ChatAgent().aserve(
+            AGENT_ADDR, root_config=dev_mode.NODE_CONFIG, log_level="info"
+        )
+    )
+</file>
+
+<file path="client.py">
+import asyncio
+
+from common import AGENT_ADDR
+from naylence.fame.core import FameFabric, generate_id
+
+from naylence.agent import Agent, dev_mode
+
+
+async def main():
+    async with FameFabric.create(root_config=dev_mode.NODE_CONFIG):
+        agent = Agent.remote_by_address(AGENT_ADDR)
+
+        conversation_id = generate_id()
+
+        await agent.start_task(
+            id=conversation_id,
+            history_length=10,
+            payload={"system_prompt": "You are a helpful assistant speaking Pirate"},
+        )
+
+        print("🔹 Chat (type 'exit' to quit)")
+        loop = asyncio.get_event_loop()
+        question = ""
+        while True:
+            text = await agent.run_turn(conversation_id, question)
+            print(f"A> {text}\n")
+
+            try:
+                question = await loop.run_in_executor(None, input, "Q> ")
+            except (EOFError, KeyboardInterrupt):
+                print("\nGoodbye!")
+                await agent.end_conversation(conversation_id)
+                break
+
+            if not (q := question.strip()) or q.lower() in ("exit", "quit"):
+                await agent.end_conversation(conversation_id)
+                break
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+</file>
+
+<file path="common.py">
+import os
+
+AGENT_ADDR = "chat@fame.fabric"
+
+
+def get_openai_client():
+    from openai import AsyncOpenAI
+
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    return AsyncOpenAI(api_key=openai_api_key)
+
+
+def get_model_name():
+    return os.getenv("MODEL_NAME") or "gpt-4.1-mini"
+</file>
+
+<file path="docker-compose.yml">
+x-images: &images
+  base: &base-image naylence/agent-sdk-python:0.1.27
+
+services:
+  # Sentinel service - runs the central coordinator on port 8000
+  sentinel:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    ports:
+      - "8000:8000"
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+
+  # Chat Agent service - connects to sentinel and provides chat functionality
+  chat-agent:
+    build: .
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "chat_agent.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+  #   restart: unless-stopped
+
+networks:
+  naylence-net:
+    driver: bridge
+</file>
+
+<file path="Dockerfile">
+FROM naylence/agent-sdk-python:0.1.27
+
+# Install additional packages required for LLM examples
+RUN pip install --no-cache-dir \
+    openai
+
+WORKDIR /work
+</file>
+
+<file path="Makefile">
+.DEFAULT_GOAL := start
+
+start:
+	docker compose up -d
+
+stop:
+	docker compose down --remove-orphans
+
+run:
+	@FAME_SHOW_ENVELOPES=false \
+	FAME_DIRECT_ADMISSION_URL="ws://localhost:8000/fame/v1/attach/ws/downstream" \
+	python client.py
+
+run-verbose:
+	@FAME_SHOW_ENVELOPES=true \
+	FAME_DIRECT_ADMISSION_URL="ws://localhost:8000/fame/v1/attach/ws/downstream" \
+	python client.py
+
+clean: stop
+	@echo "🧹 Nothing to clean"
+</file>
+
+<file path="sentinel.py">
+from naylence.agent.dev_mode import run_sentinel
+
+if __name__ == "__main__":
+    run_sentinel(log_level="info")
+</file>
+
+</files>

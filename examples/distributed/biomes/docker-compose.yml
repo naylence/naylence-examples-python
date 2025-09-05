@@ -1,0 +1,113 @@
+x-images: &images
+  base: &base-image naylence/agent-sdk-python:0.1.27
+
+services:
+
+  main-sentinel:
+    image: *base-image
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+
+
+  child-sentinel1:
+    image: *base-image
+    depends_on:
+      main-sentinel:
+        condition: service_healthy
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+    environment:
+      - FAME_ADMISSION_PROFILE=open
+      - FAME_DIRECT_ADMISSION_URL=ws://main-sentinel:8000/fame/v1/attach/ws/downstream
+
+
+  child-sentinel2:
+    image: *base-image
+    depends_on:
+      main-sentinel:
+        condition: service_healthy
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+
+    environment:
+      - FAME_ADMISSION_PROFILE=open
+      - FAME_DIRECT_ADMISSION_URL=ws://main-sentinel:8000/fame/v1/attach/ws/downstream
+      
+
+  math-agent1:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "math_agent1.py"]
+    depends_on:
+      child-sentinel1:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_ADMISSION_PROFILE=open
+      - FAME_DIRECT_ADMISSION_URL=ws://child-sentinel1:8000/fame/v1/attach/ws/downstream
+
+
+  math-agent2:
+    image: *base-image
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "math_agent2.py"]
+    depends_on:
+      child-sentinel2:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_ADMISSION_PROFILE=open
+      - FAME_DIRECT_ADMISSION_URL=ws://child-sentinel2:8000/fame/v1/attach/ws/downstream
+
+  #   restart: unless-stopped
+
+networks:
+  naylence-net:
+    driver: bridge

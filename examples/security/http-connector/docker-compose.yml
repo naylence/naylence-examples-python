@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-python:0.1.25
+  base: &base-image naylence/agent-sdk-python:0.1.27
 
 services:
   # Sentinel reverse proxy
@@ -11,7 +11,9 @@ services:
       - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./config/caddy/data:/data
     depends_on:
+      - oauth2-server-internal
       - sentinel-internal
+      - math-agent-internal
     networks:
       naylence-net:
         aliases:

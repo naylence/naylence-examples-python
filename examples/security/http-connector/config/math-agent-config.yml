@@ -12,7 +12,7 @@ node:
     type: DirectAdmissionClient
     connection_grants:
       - type: HttpConnectionGrant
-        purpose: "node_attach"
+        purpose: "node.attach"
         url: ${env:FAME_DIRECT_ADMISSION_URL}
         auth:
           type: BearerTokenHeaderAuth

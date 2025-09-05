@@ -1,5 +1,8 @@
 .DEFAULT_GOAL := start
 
+# Handle verbose mode via VERBOSE variable or verbose target
+VERBOSE ?= false
+
 init:
 	@python3 ../scripts/generate_dev_secrets.py --from-subdir
 
@@ -10,10 +13,19 @@ stop:
 	docker compose down --remove-orphans
 
 run:
-	@python client.py
+	@if [ "$(VERBOSE)" = "true" ]; then \
+		FAME_SHOW_ENVELOPES=true python client.py; \
+	else \
+		python client.py; \
+	fi
 
+# Verbose mode via explicit target
 run-verbose:
 	@FAME_SHOW_ENVELOPES=true python client.py
+
+# Alternative verbose target
+verbose:
+	@$(MAKE) run VERBOSE=true
 
 clean: stop
 	@echo "🧹 Cleaning generated files..."
