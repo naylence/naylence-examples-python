@@ -1,0 +1,36 @@
+extensions:
+  oidc:
+    issuer_url: https://oauth2-server
+    audience: "fame.fabric"
+
+# OpenTelemetry Collector configuration for integration tests
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        auth:
+          authenticator: oidc
+
+processors:
+  batch:
+
+exporters:
+  otlphttp/jaeger:
+    endpoint: http://jaeger:4318
+    tls:
+      insecure: true
+  
+  # For ephemeral testing, we only need debug output to verify traces are processed
+  debug:
+    verbosity: detailed
+
+service:
+  extensions: [oidc]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlphttp/jaeger]  # Export to both debug and Jaeger

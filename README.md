@@ -25,6 +25,8 @@ examples/
     chat_agent.py
     image_generation_agent.py
     llm_agent.py
+  monitoring/
+    open-telemetry/
   security/                    # admission, overlay, advanced identities & routing
     gated/
     overlay/
@@ -81,7 +83,17 @@ examples/
    *Biomes:* hierarchical parent/child sentinels (deep‑to‑deep delegation across child biomes).
    *Peers:* two sentinels connected via a peer link; route calls across the peer.
 
-10. **Security tiers — `security/`**
+9. **Monitoring — `monitoring/open-telemetry/`
+   See how message envelopes flow across the fabric using OpenTelemetry and Jaeger for distributed tracing. This example shows how to:
+
+   - Instrument agents and sentinels with OpenTelemetry.
+   - Visualize RPC request and response traces in Jaeger.
+   - Track the lifecycle of an envelope as it moves between nodes.
+   - Diagnose bottlenecks and latency in multi-agent workflows.
+
+   > Tip: After running `make start`, open the Jaeger UI (usually at [http://localhost:16686](http://localhost:16686)) to explore traces in real time.
+
+11. **Security tiers — `security/`**
     Progressively add real‑world security:
 
     * **gated/**: OAuth2/JWT‑gated admission to the sentinel

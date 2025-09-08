@@ -1,5 +1,6 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-adv-python:0.2.1
+  base: &base-image 
+    build: .
 
 services:
   # Sentinel reverse proxy
@@ -10,67 +11,77 @@ services:
     volumes:
       - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./config/caddy/data:/data
-    depends_on:
-      - ca-internal
+    # depends_on:
+    #   - sentinel-internal
     networks:
       naylence-net:
         aliases:
           - sentinel
           - oauth2-server
-          - welcome
-          - ca
+          - otel-collector
 
   # OAuth2 server - shouldn't be connected to directly.
   # This is for dev purposes only, do not use in production
   oauth2-server-internal:
-    image: *base-image
-    # ports: 
-    #   - "8099:8099"
+    build: .
+    ports: 
+      - "8099:8099"
     command: ["python", "-m", "naylence.fame.fastapi.oauth2_server"]
     networks:
       - naylence-net
     env_file:
       - config/.env.oauth2-server
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8099/.well-known/openid-configuration')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
 
-  ca-internal:
-    image: *base-image
-    # ports: 
-    #   - "8099:8099"
-    command: ["python", "-m", "naylence.fame.security.cert.ca_server"]
-    networks:
-      - naylence-net
+  otel-collector-internal:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yml"]
     volumes:
       - .:/work:ro
-      - ./config/certs:/etc/fame/certs:ro
-      - ./config/ca.yml:/etc/fame/fame-config.yml:ro
-    env_file:
-      - config/.env.ca
-
-  welcome-internal:
-    image: *base-image
-    # ports: 
-    #   - "8099:8099"
-    command: ["python", "-m", "naylence.fame.welcome.node_welcome_server"]
+      - ./config/otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "14317:4317"   # OTLP gRPC receiver (using different external port)
+      - "14318:4318"   # OTLP HTTP receiver (using different external port)
+    depends_on:
+      jaeger:
+        condition: service_started
+      oauth2-server-internal:
+        condition: service_healthy
     networks:
       - naylence-net
-    volumes:
-      - .:/work:ro
-      - ./config/welcome.yml:/etc/fame/fame-config.yml:ro
-    env_file:
-      - config/.env.welcome
+    environment:
+      - SSL_CERT_FILE=/work/config/caddy/data/caddy/pki/authorities/local/root.crt
+
+  # Jaeger 2 for tracing
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4318:4318"     # OTLP HTTP receiver
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - naylence-net
 
   # Real sentinel - shouldn't be connected to directly
   sentinel-internal:
-    image: *base-image
+    build: .
     volumes:
       - .:/work:ro
-      - ./config/certs:/etc/fame/certs:ro
       - ./config/sentinel-config.yml:/etc/fame/fame-config.yml:ro
     working_dir: /work
     command: ["python", "sentinel.py"]
     # ports:
     #   - "8000:8000"
+    depends_on:
+      otel-collector-internal:
+        condition: service_started
     networks:
       - naylence-net
     stop_signal: SIGINT
@@ -82,43 +93,28 @@ services:
       retries: 10
       start_period: 0.5s
       start_interval: 1s
-      
     env_file:
       - config/.env.sentinel
 
-  math-agent-replica1:
-    image: *base-image
+  # Math Agent service - connects to sentinel and provides math functionality
+  math-agent:
+    build: .
     volumes:
       - .:/work:ro
-      - ./config/certs:/etc/fame/certs:ro
       - ./config/agent-config.yml:/etc/fame/fame-config.yml:ro
     working_dir: /work
     command: ["python", "math_agent.py"]
     depends_on:
       sentinel-internal:
         condition: service_healthy
+      otel-collector-internal:
+        condition: service_started
     networks:
       - naylence-net
     env_file:
       - config/.env.agent
 
-  math-agent-replica2:
-    image: *base-image
-    volumes:
-      - .:/work:ro
-      - ./config/certs:/etc/fame/certs:ro
-      - ./config/agent-config.yml:/etc/fame/fame-config.yml:ro
-    working_dir: /work
-    command: ["python", "math_agent.py"]
-    depends_on:
-      sentinel-internal:
-        condition: service_healthy
-    networks:
-      - naylence-net
-    env_file:
-      - config/.env.agent
-
-  # restart: unless-stopped
+  #   restart: unless-stopped
 
 networks:
   naylence-net:

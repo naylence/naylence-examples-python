@@ -15,10 +15,10 @@ stop:
 	
 
 run:
-	@docker run --rm -v .:/work -w /work naylence/agent-sdk-python:0.1.27 python $(SCRIPT)
+	@docker run --rm -v .:/work -w /work naylence/agent-sdk-python:0.2.1 python $(SCRIPT)
 
 run-verbose:
-	@docker run --rm -v .:/work -w /work naylence/agent-sdk-python:0.1.27 python $(SCRIPT)
+	@docker run --rm -v .:/work -w /work naylence/agent-sdk-python:0.2.1 python $(SCRIPT)
 
 clean: stop
 	@echo "🧹 Nothing to clean"
