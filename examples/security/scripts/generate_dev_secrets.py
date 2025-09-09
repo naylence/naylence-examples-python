@@ -43,6 +43,7 @@ def write_file(path, content):
 client_id = rand_id("client")
 client_secret = rand_id("s")
 hmac_secret = secrets.token_urlsafe(32)  # Generate 256-bit HMAC secret
+storage_master_key = secrets.token_urlsafe(32)  # Generate 256-bit storage secret
 
 # Optional: if your dev OAuth server reads a JSON file for clients:
 # (adapt to your server’s expected format)
@@ -131,6 +132,7 @@ def discover_and_process_env_templates():
                     "DEV_CLIENT_ID": client_id,
                     "DEV_CLIENT_SECRET": client_secret,
                     "FAME_HMAC_SECRET": hmac_secret,
+                    "FAME_STORAGE_MASTER_KEY": storage_master_key,
                 }
             )
 

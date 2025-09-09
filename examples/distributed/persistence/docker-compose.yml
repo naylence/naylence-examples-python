@@ -6,7 +6,8 @@ services:
   sentinel:
     image: *base-image
     volumes:
-      - .:/work:ro
+      - .:/work
+      # - ./data/sentinel:/work/data/sentinel
     working_dir: /work
     command: ["python", "sentinel.py"]
     ports:
@@ -22,23 +23,26 @@ services:
       retries: 10
       start_period: 0.5s
       start_interval: 1s
+    env_file:
+      - config/.env.sentinel
 
-  # Echo Agent service - connects to sentinel and provides echo functionality
-  echo-agent:
+  # Storage Agent service - connects to sentinel and provides storage functionality
+  storage-agent:
     image: *base-image
     volumes:
-      - .:/work:ro
+      - .:/work
+      # - ./data/agent:/work/data/agent
     working_dir: /work
-    command: ["python", "echo_agent.py"]
+    command: ["python", "storage_agent.py"]
     depends_on:
       sentinel:
         condition: service_healthy
     networks:
       - naylence-net
-    environment:
-      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+    env_file:
+      - config/.env.agent
 
-    restart: unless-stopped
+  #   restart: unless-stopped
 
 networks:
   naylence-net:

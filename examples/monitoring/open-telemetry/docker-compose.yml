@@ -1,6 +1,7 @@
 x-images: &images
   base: &base-image 
     build: .
+    image: naylence/open-telemetry-base:latest
 
 services:
   # Sentinel reverse proxy
@@ -23,7 +24,7 @@ services:
   # OAuth2 server - shouldn't be connected to directly.
   # This is for dev purposes only, do not use in production
   oauth2-server-internal:
-    build: .
+    <<: *base-image
     ports: 
       - "8099:8099"
     command: ["python", "-m", "naylence.fame.fastapi.oauth2_server"]
@@ -71,7 +72,7 @@ services:
 
   # Real sentinel - shouldn't be connected to directly
   sentinel-internal:
-    build: .
+    <<: *base-image
     volumes:
       - .:/work:ro
       - ./config/sentinel-config.yml:/etc/fame/fame-config.yml:ro
@@ -98,7 +99,7 @@ services:
 
   # Math Agent service - connects to sentinel and provides math functionality
   math-agent:
-    build: .
+    <<: *base-image
     volumes:
       - .:/work:ro
       - ./config/agent-config.yml:/etc/fame/fame-config.yml:ro

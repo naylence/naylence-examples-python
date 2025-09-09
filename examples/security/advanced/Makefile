@@ -1,5 +1,5 @@
 # Docker image for Naylence Agent SDK
-DOCKER_IMAGE := naylence/agent-sdk-adv-python:0.2.1
+DOCKER_IMAGE := naylence/agent-sdk-adv-python:0.2.5
 
 .DEFAULT_GOAL := start
 

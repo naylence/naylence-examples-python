@@ -21,6 +21,7 @@ examples/
     push-notifications/
     status-subscription/
     capability-routing/
+    persistence/
   llm/                         # single‑process LLM + image gen agents
     chat_agent.py
     image_generation_agent.py
@@ -82,8 +83,16 @@ examples/
 9. **Topologies — `distributed/biomes/` and `distributed/peers/`**
    *Biomes:* hierarchical parent/child sentinels (deep‑to‑deep delegation across child biomes).
    *Peers:* two sentinels connected via a peer link; route calls across the peer.
+10. **Persistence — `distributed/persistence/` and `distributed/peers/`**
+   Learn how to enable persistence in the fabric and use the persistence API within agents. This section covers:
 
-9. **Monitoring — `monitoring/open-telemetry/`
+   - Configuring node-level persistence (e.g. encrypted storage).
+   - Saving and retrieving agent state and artifacts using the persistence API.
+   - Ensuring data durability and recovery across restarts or failures.
+
+   > Tip: Persistence is optional but recommended for agents that manage long-lived state or need to recover after interruptions.
+
+11. **Monitoring — `monitoring/open-telemetry/`
    See how message envelopes flow across the fabric using OpenTelemetry and Jaeger for distributed tracing. This example shows how to:
 
    - Instrument agents and sentinels with OpenTelemetry.
@@ -93,7 +102,7 @@ examples/
 
    > Tip: After running `make start`, open the Jaeger UI (usually at [http://localhost:16686](http://localhost:16686)) to explore traces in real time.
 
-11. **Security tiers — `security/`**
+12. **Security tiers — `security/`**
     Progressively add real‑world security:
 
     * **gated/**: OAuth2/JWT‑gated admission to the sentinel
