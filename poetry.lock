@@ -1026,23 +1026,18 @@ files = [
 
 [[package]]
 name = "naylence-agent-sdk"
-version = "0.2.4"
+version = "0.2.5"
 description = "Naylence Agent SDK"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "naylence_agent_sdk-0.2.4-py3-none-any.whl", hash = "sha256:ec5be7770b1e4c0f6cb5d7cb097e7631ecff2573ebd017cdde4f7fa1ee07b908"},
-    {file = "naylence_agent_sdk-0.2.4.tar.gz", hash = "sha256:84fd557b51432273af78deb258145e679cdbcd71f12ecde7b1dbec0690921c9f"},
+    {file = "naylence_agent_sdk-0.2.5-py3-none-any.whl", hash = "sha256:275e243b8a36a2143144dc7878969029eda945a127cd7310981f5ee5ff2955da"},
+    {file = "naylence_agent_sdk-0.2.5.tar.gz", hash = "sha256:b99b2b0d26518509f201445f5c07f38effdea85aa7574ade959ab40a5cd3d065"},
 ]
 
 [package.dependencies]
-naylence-runtime = ">=0.2.3"
-
-[package.source]
-type = "legacy"
-url = "https://test.pypi.org/simple"
-reference = "testpypi"
+naylence-runtime = ">=0.2.4"
 
 [[package]]
 name = "naylence-core"
@@ -1082,14 +1077,14 @@ pydantic = ">=2.11.4,<3.0.0"
 
 [[package]]
 name = "naylence-runtime"
-version = "0.2.3"
+version = "0.2.4"
 description = "Naylence Runtime"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "naylence_runtime-0.2.3-py3-none-any.whl", hash = "sha256:518863beb5a9ee732c36ad385c3666a96d087fed6b42901005aed4a3daad3f57"},
-    {file = "naylence_runtime-0.2.3.tar.gz", hash = "sha256:cb02d3386fad8bd8dcca205aa4620d906fc2c53447e0f0a7b607f30195b53ba8"},
+    {file = "naylence_runtime-0.2.4-py3-none-any.whl", hash = "sha256:3501ea66e5f69612b31d92793cbf8f71f099367851b28f69ed45875bce7993de"},
+    {file = "naylence_runtime-0.2.4.tar.gz", hash = "sha256:f4ef1e29a0a1c46bf4cc2ab639f804fb674b2b39dc7e97e596fa7ecb3ac7520f"},
 ]
 
 [package.dependencies]
@@ -1104,11 +1099,6 @@ pyyaml = ">=6.0.2,<7.0.0"
 structlog = ">=25.3.0,<26.0.0"
 uvicorn = ">=0.35.0,<0.36.0"
 websockets = ">=15.0.1,<16.0.0"
-
-[package.source]
-type = "legacy"
-url = "https://test.pypi.org/simple"
-reference = "testpypi"
 
 [[package]]
 name = "openai"
@@ -2061,4 +2051,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "ad1e69382cc3bf6240232b86c96a4b3c72025ce8ad7792a070d1ace278cc1e3d"
+content-hash = "a5d72fc1364193c20867fc2d7dbb9604d98e029078e0fe9e709c44d893695ffb"
