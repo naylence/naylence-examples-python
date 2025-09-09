@@ -13,8 +13,8 @@ services:
     depends_on:
       sentinel-internal:
         condition: service_healthy
-      math-agent:
-        condition: service_healthy
+      # math-agent:
+      #   condition: service_healthy
     networks:
       naylence-net:
         aliases:
