@@ -1,3 +1,5 @@
+[![Join our Discord](https://img.shields.io/badge/Discord-Join%20Chat-blue?logo=discord)](https://discord.gg/nwZAeqdv7y)
+
 # Naylence Examples
 
 This repository is a tour of Naylence’s Agent SDK and runtime patterns, from "hello world" agents to multi‑agent orchestration and production‑grade security. Use it as a workbook: run each example, skim its code, and move to the next.
