@@ -9,9 +9,6 @@ enable_logging(log_level="warning")
 
 
 class HelloAgent(BaseAgent):
-    def __init__(self, name: str | None = None):
-        super().__init__(name)
-        self._counter = 0
 
     async def on_message(self, message: Any) -> Any:
         print(f"Agent received message: {message}")
