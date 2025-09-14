@@ -17,6 +17,4 @@ PEER_SENTINEL_CONFIG = {
 }
 
 if __name__ == "__main__":
-    asyncio.run(
-        Sentinel.aserve(root_config=PEER_SENTINEL_CONFIG, log_level="trace")
-    )
+    asyncio.run(Sentinel.aserve(root_config=PEER_SENTINEL_CONFIG, log_level="trace"))

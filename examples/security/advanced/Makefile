@@ -1,5 +1,5 @@
 # Docker image for Naylence Agent SDK
-DOCKER_IMAGE := naylence/agent-sdk-adv-python:0.2.5
+DOCKER_IMAGE := naylence/agent-sdk-adv-python:0.3.7
 
 .DEFAULT_GOAL := start
 
@@ -10,8 +10,13 @@ init:
 		-w /work \
 		$(DOCKER_IMAGE) \
 		python -m naylence.fame.security.cert.setup_pki --output ./config/certs --org "Strict Overlay Development"
+	
 	@echo "🔑 Generating dev secrets..."
-	@python3 ../scripts/generate_dev_secrets.py --from-subdir
+	@docker run --rm \
+		-v "$(shell pwd)/../..:/work" \
+		-w /work/$(shell basename "$(shell dirname "$(shell pwd)")")/$(shell basename "$(shell pwd)") \
+		$(DOCKER_IMAGE) \
+		python ../scripts/generate_dev_secrets.py --from-subdir
 
 
 start: init

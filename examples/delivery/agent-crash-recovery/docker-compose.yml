@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-python:0.3.7
+  base: &base-image naylence/agent-sdk-python:0.3.8
 
 services:
   # Sentinel service - runs the central coordinator on port 8000
@@ -22,23 +22,25 @@ services:
       retries: 10
       start_period: 0.5s
       start_interval: 1s
+    environment:
+      - FAME_DELIVERY_PROFILE=${FAME_DELIVERY_PROFILE:-at-most-once}
+    
 
-  # Math Agent service - connects to sentinel and provides math functionality
-  math-agent:
+  # Message Agent service - connects to sentinel and provides message functionality
+  message-agent:
     image: *base-image
     volumes:
-      - .:/work:ro
+      - .:/work
     working_dir: /work
-    command: ["python", "math_agent.py"]
+    command: ["python", "message_agent.py"]
     depends_on:
       sentinel:
         condition: service_healthy
     networks:
       - naylence-net
-    environment:
-      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+    env_file: ./config/.env.agent
 
-  #   restart: unless-stopped
+    restart: on-failure
 
 networks:
   naylence-net:

@@ -16,7 +16,7 @@ async def main():
 
         agent2 = Agent.remote_by_address(MATH_AGENT2_ADDR)
         print(await agent2.multiply(x=6, y=7))
-        
+
         async for v in await agent2.fib_stream(_stream=True, n=10):
             print(v, end=" ")
         print()

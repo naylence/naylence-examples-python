@@ -1,10 +1,21 @@
-DOCKER_IMAGE := naylence/open-telemetry-base:latest
+DOCKER_IMAGE := naylence/open-telemetry-base:0.3.1
 COMPOSE_PROJECT_NAME := open-telemetry
 
 .DEFAULT_GOAL := start
 
 init:
-	@python3 ../../security/scripts/generate_dev_secrets.py --from-subdir
+	docker compose build
+	@docker run --rm \
+	-v "$(shell pwd)/../..:/work" \
+	-w /work/$(shell basename "$(shell dirname "$(shell pwd)")")/$(shell basename "$(shell pwd)") \
+	$(DOCKER_IMAGE) \
+	python ../../security/scripts/generate_dev_secrets.py --from-subdir
+
+build:
+	docker compose build
+
+build-no-cache:
+	docker compose build --no-cache
 
 start: init
 	docker compose -p $(COMPOSE_PROJECT_NAME) up -d

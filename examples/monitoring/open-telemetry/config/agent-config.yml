@@ -20,6 +20,10 @@ node:
     type: StorageProfile
     profile: "${env:STORAGE_PROFILE:memory}"
 
+  delivery:
+    type: DeliveryProfile
+    profile: ${env:FAME_DELIVERY_PROFILE:at-most-once}
+
   telemetry:
     type: OpenTelemetryTraceEmitter
     service_name: naylence-telemetry

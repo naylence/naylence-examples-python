@@ -11,6 +11,9 @@ enable_logging(log_level="warning")  # Enable trace logging for debugging
 class SimpleAgent(BaseAgent):
     @operation  # exposed as "add"
     async def add(self, x: int, y: int) -> int:
+        # print("Adding", x, "and", y)
+        # if True:  # Simulate occasional failure
+        #     raise Exception("Simulated failure")
         return x + y
 
     @operation(

@@ -7,12 +7,11 @@ from naylence.agent import Agent, BaseAgent, dev_mode
 
 
 class MathAgent(BaseAgent):
-    
     @operation(name="multiply")
     async def multi(self, x: int, y: int) -> int:
         agent1 = Agent.remote_by_address(MATH_AGENT1_ADDR)
-        return await agent1.multiply(x=x, y=y) # type: ignore
-    
+        return await agent1.multiply(x=x, y=y)  # type: ignore
+
     @operation(
         name="fib_stream", streaming=True
     )  # exposed as "fib_stream" with streaming enabled

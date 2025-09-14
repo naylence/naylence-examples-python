@@ -1,4 +1,4 @@
-FROM naylence/agent-sdk-python:0.2.5
+FROM naylence/agent-sdk-python:0.3.7
 
 # Install open-telemetry packages
 RUN pip install --no-cache-dir \

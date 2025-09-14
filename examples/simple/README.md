@@ -98,7 +98,7 @@ make run-verbose SCRIPT=rpc_agent.py  # with verbose output
 # Or run directly with docker
 docker run --rm \
   -v "$PWD:/work:ro" -w /work \
-  naylence/agent-sdk-python:0.2.5 \
+  naylence/agent-sdk-python:0.3.7 \
   python rpc_agent.py
 ```
 

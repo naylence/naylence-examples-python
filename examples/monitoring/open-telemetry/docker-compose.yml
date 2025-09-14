@@ -1,7 +1,7 @@
 x-images: &images
   base: &base-image 
     build: .
-    image: naylence/open-telemetry-base:latest
+    image: naylence/open-telemetry-base:0.3.1
 
 services:
   # Sentinel reverse proxy

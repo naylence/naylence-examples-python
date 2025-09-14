@@ -26,6 +26,4 @@ class MathAgent(BaseAgent):
 
 
 if __name__ == "__main__":
-    asyncio.run(
-        MathAgent().aserve(AGENT_ADDR, log_level="info")
-    )
+    asyncio.run(MathAgent().aserve(AGENT_ADDR, log_level="info"))

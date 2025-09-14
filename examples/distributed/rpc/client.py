@@ -4,6 +4,9 @@ from common import AGENT_ADDR
 from naylence.fame.core import FameFabric
 
 from naylence.agent import Agent, dev_mode
+from naylence.fame.util.logging import enable_logging
+
+enable_logging(log_level="warning")
 
 
 async def main():

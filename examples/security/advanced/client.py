@@ -14,11 +14,11 @@ async def main():
     async with FameFabric.create(root_config=dev_mode.CLIENT_CONFIG):
         agent = Agent.remote_by_address(AGENT_ADDR)
         print(await agent.add(x=3, y=4))
-        print(await agent.multiply(x=6, y=7))
+        # print(await agent.multiply(x=6, y=7))
 
-        async for v in await agent.fib_stream(_stream=True, n=10):
-            print(v, end=" ")
-        print()
+        # async for v in await agent.fib_stream(_stream=True, n=10):
+        #     print(v, end=" ")
+        # print()
 
 
 if __name__ == "__main__":
