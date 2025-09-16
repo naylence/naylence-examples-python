@@ -3,7 +3,7 @@ import asyncio
 from naylence.fame.service import operation
 
 from common import MATH_AGENT1_ADDR, MATH_AGENT2_ADDR
-from naylence.agent import Agent, BaseAgent, dev_mode
+from naylence.agent import Agent, BaseAgent, configs
 
 
 class MathAgent(BaseAgent):
@@ -25,6 +25,6 @@ class MathAgent(BaseAgent):
 if __name__ == "__main__":
     asyncio.run(
         MathAgent().aserve(
-            MATH_AGENT2_ADDR, root_config=dev_mode.NODE_CONFIG, log_level="trace"
+            MATH_AGENT2_ADDR, root_config=configs.NODE_CONFIG, log_level="warning"
         )
     )

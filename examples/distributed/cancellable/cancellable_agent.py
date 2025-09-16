@@ -8,7 +8,7 @@ from naylence.agent import (
     DataPart,
     TaskSendParams,
     TaskState,
-    dev_mode,
+    configs,
 )
 
 
@@ -31,6 +31,6 @@ class CancellableAgent(BackgroundTaskAgent):
 if __name__ == "__main__":
     asyncio.run(
         CancellableAgent().aserve(
-            AGENT_ADDR, root_config=dev_mode.NODE_CONFIG, log_level="info"
+            AGENT_ADDR, root_config=configs.NODE_CONFIG, log_level="info"
         )
     )

@@ -30,7 +30,7 @@ The client attaches **only** to the main sentinel. Address resolution and routin
     * `FAME_ADMISSION_PROFILE=open`
     * `FAME_DIRECT_ADMISSION_URL=ws://main-sentinel:8000/fame/v1/attach/ws/downstream`
   * Agents attach to their **respective child** sentinel with the same `open` profile.
-* **`sentinel.py`** — entrypoint for both main and child sentinels (using `dev_mode.SENTINEL_CONFIG`).
+* **`sentinel.py`** — entrypoint for both main and child sentinels (using `configs.SENTINEL_CONFIG`).
 * **`math_agent1.py`** — arithmetic RPC (`add`, `multiply`) at address **`math1@fame.fabric`**.
 * **`math_agent2.py`** — **streaming** Fibonacci operation (`fib_stream`) **and a delegated** `multiply` (forwards to **`math1@fame.fabric`**) at **`math2@@fame.fabric`**.
 * **`client.py`** — attaches to the **main** sentinel and calls both agents by address.

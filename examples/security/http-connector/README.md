@@ -14,7 +14,7 @@ The end result: clients can keep using WebSockets (or HTTP) to talk to the senti
 * **Connector:** uses **HTTP** for agent ↔ sentinel instead of WebSockets.
 * **Two half‑duplex flows:** `downstream` and `upstream` HTTP routes together emulate full‑duplex.
 * **Reverse authorization (stateless):** each callback HTTP request from sentinel ➜ agent includes a self-contained Bearer JWT (HMAC) granted by the agent; there is no session, every request is authenticated independently.
-* **Custom node config:** the agent runs from a **bespoke YAML config**, not `dev_mode` presets.
+* **Custom node config:** the agent runs from a **bespoke YAML config**, not `configs` presets.
 * **Public URL override:** sets **`FAME_PUBLIC_URL`** so the agent advertises a hostname reachable **from the sentinel** inside Docker.
 * **Caddy mapping:** reverse proxy is configured for **both** WebSocket and HTTP ingress paths (for sentinel and agent).
 * **Profiles in use:** `FAME_ADMISSION_PROFILE=direct-http` and `FAME_SECURITY_PROFILE=overlay-callback`.
@@ -130,7 +130,7 @@ Inside Docker Compose, service names become **network‑resolvable hostnames**. 
 
 ## About the custom node config
 
-Previous examples rely on `dev_mode` configs that cover the common WebSocket path. This example uses a **custom YAML** to:
+Previous examples rely on `configs` configs that cover the common WebSocket path. This example uses a **custom YAML** to:
 
 * enable the **`HttpListener`** on the agent,
 * issue an **`HttpConnectionGrant`** with a Bearer token provider,

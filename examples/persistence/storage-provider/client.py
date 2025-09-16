@@ -4,11 +4,11 @@ from datetime import datetime, timezone
 from common import AGENT_ADDR
 from naylence.fame.core import FameFabric
 
-from naylence.agent import Agent, dev_mode
+from naylence.agent import Agent, configs
 
 
 async def main():
-    async with FameFabric.create(root_config=dev_mode.CLIENT_CONFIG):
+    async with FameFabric.create(root_config=configs.CLIENT_CONFIG):
         agent = Agent.remote_by_address(AGENT_ADDR)
         key = f"key_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
 

@@ -3,7 +3,7 @@ from typing import Any
 
 from common import SUMMARIZER_AGENT_ADDR, get_model_name, get_openai_client
 
-from naylence.agent import BaseAgent, dev_mode
+from naylence.agent import BaseAgent, configs
 
 
 client = get_openai_client()
@@ -25,6 +25,6 @@ class SummarizerAgent(BaseAgent):
 if __name__ == "__main__":
     asyncio.run(
         SummarizerAgent().aserve(
-            SUMMARIZER_AGENT_ADDR, root_config=dev_mode.NODE_CONFIG, log_level="info"
+            SUMMARIZER_AGENT_ADDR, root_config=configs.NODE_CONFIG, log_level="info"
         )
     )

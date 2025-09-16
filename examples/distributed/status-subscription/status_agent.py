@@ -7,7 +7,7 @@ from naylence.agent import (
     BackgroundTaskAgent,
     DataPart,
     TaskSendParams,
-    dev_mode,
+    configs,
 )
 
 
@@ -25,6 +25,6 @@ class StatusAgent(BackgroundTaskAgent):
 if __name__ == "__main__":
     asyncio.run(
         StatusAgent().aserve(
-            AGENT_ADDR, root_config=dev_mode.NODE_CONFIG, log_level="trace"
+            AGENT_ADDR, root_config=configs.NODE_CONFIG, log_level="warning"
         )
     )

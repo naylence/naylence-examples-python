@@ -3,11 +3,11 @@ import asyncio
 from common import AGENT_ADDR
 from naylence.fame.core import FameFabric, generate_id
 
-from naylence.agent import Agent, dev_mode
+from naylence.agent import Agent, configs
 
 
 async def main():
-    async with FameFabric.create(root_config=dev_mode.NODE_CONFIG):
+    async with FameFabric.create(root_config=configs.NODE_CONFIG):
         agent = Agent.remote_by_address(AGENT_ADDR)
 
         conversation_id = generate_id()

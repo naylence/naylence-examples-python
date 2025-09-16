@@ -10,8 +10,7 @@ stop:
 	docker compose down --remove-orphans
 
 run:
-	@FAME_DIRECT_ADMISSION_URL="ws://localhost:8000/fame/v1/attach/ws/downstream" \
-	python client.py
+	@set -a; . config/.env.client; set +a; python client.py
 	@echo
 	@echo "Waiting a few seconds for message-agent to process..."
 	@sleep 5
@@ -19,9 +18,7 @@ run:
 	@docker compose logs message-agent
 
 run-verbose:
-	@FAME_SHOW_ENVELOPES=true \
-	FAME_DIRECT_ADMISSION_URL="ws://localhost:8000/fame/v1/attach/ws/downstream" \
-	python client.py
+	@set -a; . config/.env.client; set +a; FAME_SHOW_ENVELOPES=true python client.py
 	@echo
 	@echo "Waiting a few seconds for message-agent to process..."
 	@sleep 5
@@ -35,6 +32,6 @@ logs:
 clean: stop
 	@echo "🧹 Cleaning generated files..."
 	@rm -rf ../../security/.secrets
-	@rm -rf config/.env.agent
+	@rm -rf config/.env.agent config/.env.client
 	@rm -rf data
 	@echo "✅ Cleaned generated .env files and secrets directory"

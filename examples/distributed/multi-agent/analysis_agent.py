@@ -3,7 +3,7 @@ from typing import Any
 
 from common import ANALYSIS_AGENT_ADDR, SENTIMENT_AGENT_ADDR, SUMMARIZER_AGENT_ADDR
 
-from naylence.agent import Agent, BaseAgent, dev_mode
+from naylence.agent import Agent, BaseAgent, configs
 
 
 class AnalysisAgent(BaseAgent):
@@ -24,6 +24,6 @@ class AnalysisAgent(BaseAgent):
 if __name__ == "__main__":
     asyncio.run(
         AnalysisAgent().aserve(
-            ANALYSIS_AGENT_ADDR, root_config=dev_mode.NODE_CONFIG, log_level="info"
+            ANALYSIS_AGENT_ADDR, root_config=configs.NODE_CONFIG, log_level="info"
         )
     )

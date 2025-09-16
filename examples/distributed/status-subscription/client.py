@@ -8,13 +8,13 @@ from naylence.agent import (
     DataPart,
     TaskArtifactUpdateEvent,
     TaskStatusUpdateEvent,
-    dev_mode,
+    configs,
     make_task_params,
 )
 
 
 async def main():
-    async with FameFabric.create(root_config=dev_mode.CLIENT_CONFIG):
+    async with FameFabric.create(root_config=configs.CLIENT_CONFIG):
         agent = Agent.remote_by_address(AGENT_ADDR)
         task_id = generate_id()
 

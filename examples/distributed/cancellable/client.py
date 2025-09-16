@@ -13,7 +13,7 @@ from naylence.agent import (
     TaskStatusUpdateEvent,
     make_task_params,
 )
-from naylence.agent.dev_mode import CLIENT_CONFIG
+from naylence.agent.configs import CLIENT_CONFIG
 
 
 async def main():

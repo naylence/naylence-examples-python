@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from common import AGENT_ADDR
 from naylence.fame.core import FameMessageResponse
-from naylence.agent import BaseAgent, BaseAgentState, dev_mode
+from naylence.agent import BaseAgent, BaseAgentState, configs
 
 
 class Counter(BaseAgentState):
@@ -14,6 +14,7 @@ class Counter(BaseAgentState):
 class MessageAgent(BaseAgent[Counter]):
     async def on_message(self, message: Any) -> Optional[FameMessageResponse]:
         async with self.state as state:
+            print("MessageAgent current state:", state.count)
             state.count += 1
             should_exit = bool(state.count % 2)
 
@@ -30,6 +31,6 @@ class MessageAgent(BaseAgent[Counter]):
 if __name__ == "__main__":
     asyncio.run(
         MessageAgent().aserve(
-            AGENT_ADDR, root_config=dev_mode.NODE_CONFIG, log_level="info"
+            AGENT_ADDR, root_config=configs.NODE_CONFIG, log_level="info"
         )
     )

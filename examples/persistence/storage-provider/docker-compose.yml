@@ -1,0 +1,49 @@
+x-images: &images
+  base: &base-image naylence/agent-sdk-python:0.3.11
+
+services:
+  # Sentinel service - runs the central coordinator on port 8000
+  sentinel:
+    image: *base-image
+    volumes:
+      - .:/work
+      # - ./data/sentinel:/work/data/sentinel
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    ports:
+      - "8000:8000"
+    networks:
+      - naylence-net
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+    env_file:
+      - config/.env.sentinel
+
+  # Storage Agent service - connects to sentinel and provides storage functionality
+  storage-agent:
+    image: *base-image
+    volumes:
+      - .:/work
+      # - ./data/agent:/work/data/agent
+    working_dir: /work
+    command: ["python", "storage_agent.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    env_file:
+      - config/.env.agent
+
+  #   restart: unless-stopped
+
+networks:
+  naylence-net:
+    driver: bridge

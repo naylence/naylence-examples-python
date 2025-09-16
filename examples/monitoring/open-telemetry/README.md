@@ -1,6 +1,6 @@
 # OpenTelemetry Example — Tracing with Explicit Configs
 
-This example demonstrates how to integrate **OpenTelemetry** into a Naylence fabric. Unlike previous examples that relied on `dev_mode` configs, here we use **explicit configuration files** for the sentinel, agent, and client. This allows us to configure OpenTelemetry emitters alongside security and admission profiles.
+This example demonstrates how to integrate **OpenTelemetry** into a Naylence fabric. Unlike previous examples that relied on `configs` configs, here we use **explicit configuration files** for the sentinel, agent, and client. This allows us to configure OpenTelemetry emitters alongside security and admission profiles.
 
 Telemetry data is exported to an **OpenTelemetry Collector**, which forwards it to **Jaeger** for visualization. Authentication for telemetry export uses the same OAuth2 provider as admission, and the collector itself is protected by OIDC.
 

@@ -4,7 +4,7 @@ from common import MATH_CAPABILITY
 
 from naylence.fame.core import AGENT_CAPABILITY
 from naylence.fame.service import operation
-from naylence.agent import BaseAgent, dev_mode
+from naylence.agent import BaseAgent, configs
 
 
 class MathAgent(BaseAgent):
@@ -37,6 +37,6 @@ class MathAgent(BaseAgent):
 if __name__ == "__main__":
     asyncio.run(
         MathAgent().aserve(
-            "math@fame.fabric", root_config=dev_mode.NODE_CONFIG, log_level="warning"
+            "math@fame.fabric", root_config=configs.NODE_CONFIG, log_level="warning"
         )
     )

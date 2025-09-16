@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-python:0.3.7
+  base: &base-image naylence/agent-sdk-python:0.3.11
 
 services:
   # Sentinel service - runs the central coordinator on port 8000
@@ -27,13 +27,12 @@ services:
       - config/.env.sentinel
 
   # Storage Agent service - connects to sentinel and provides storage functionality
-  storage-agent:
+  persistent-agent:
     image: *base-image
     volumes:
       - .:/work
-      # - ./data/agent:/work/data/agent
     working_dir: /work
-    command: ["python", "storage_agent.py"]
+    command: ["python", "persistent_agent.py"]
     depends_on:
       sentinel:
         condition: service_healthy

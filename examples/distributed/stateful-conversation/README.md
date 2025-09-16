@@ -11,7 +11,7 @@ client  →  sentinel  →  chat@fame.fabric (ChatAgent)
 ## What this shows
 
 * **Per‑conversation state** using `start_task` / `run_turn` / `end_conversation`.
-* **In‑process dev fabric** with `dev_mode` sentinel and an agent connected over WebSocket.
+* **In‑process dev fabric** with `configs` sentinel and an agent connected over WebSocket.
 * **LLM callout** via the OpenAI Chat Completions API (model configurable).
 * **Clean message loop**: user input → agent turn → assistant reply, with a bounded history window.
 
@@ -20,7 +20,7 @@ client  →  sentinel  →  chat@fame.fabric (ChatAgent)
 ## Files
 
 * **`docker-compose.yml`** — starts a sentinel on **8000** and the chat agent container.
-* **`sentinel.py`** — runs a dev‑mode sentinel (`run_sentinel(log_level="info")`).
+* **`sentinel.py`** — runs a dev‑mode sentinel.
 * **`chat_agent.py`** — the `ChatAgent` implementation with conversation memory.
 * **`client.py`** — attaches to the sentinel, starts a conversation, and runs a REPL.
 * **`common.py`** — shared bits: `AGENT_ADDR = "chat@fame.fabric"`, OpenAI helper, model name.

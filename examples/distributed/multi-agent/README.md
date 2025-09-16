@@ -183,7 +183,7 @@ class AnalysisAgent(BaseAgent):
 ### Client call
 
 ```python
-async with FameFabric.create(root_config=dev_mode.CLIENT_CONFIG):
+async with FameFabric.create(root_config=configs.CLIENT_CONFIG):
     agent = Agent.remote_by_address(ANALYSIS_AGENT_ADDR)
     result = await agent.run_task(payload=text)
     print(json.dumps(result, indent=2))

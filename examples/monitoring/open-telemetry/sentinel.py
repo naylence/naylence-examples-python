@@ -3,4 +3,4 @@ from naylence.fame.sentinel import Sentinel
 
 
 if __name__ == "__main__":
-    asyncio.run(Sentinel.aserve(log_level="trace"))
+    asyncio.run(Sentinel.aserve(log_level="warning"))

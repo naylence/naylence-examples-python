@@ -23,7 +23,7 @@ We intentionally use **channel encryption** here because it **only works with st
 
 ### 1) Agent — enable replicas with a wildcard logical
 
-> This requires a **custom node config** (not the `dev_mode` presets). Mount as `/etc/fame/fame-config.yml`.
+> This requires a **custom node config** (not the `configs` presets). Mount as `/etc/fame/fame-config.yml`.
 
 ```yaml
 node:

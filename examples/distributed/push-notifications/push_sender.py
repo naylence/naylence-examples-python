@@ -7,7 +7,7 @@ from naylence.agent import (
     BackgroundTaskAgent,
     TaskPushNotificationConfig,
     TaskSendParams,
-    dev_mode,
+    configs,
 )
 
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     asyncio.run(
         PushSender().aserve(
             address=SENDER_AGENT_ADDR,
-            root_config=dev_mode.NODE_CONFIG,
+            root_config=configs.NODE_CONFIG,
             log_level="info",
         )
     )

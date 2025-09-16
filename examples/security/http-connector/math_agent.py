@@ -29,4 +29,4 @@ if __name__ == "__main__":
     No config file is specified here. This demonstrates configuring the Naylence node
     using the default config at /etc/fame/fame-config.yml, which is mounted via Docker Compose.
     """
-    asyncio.run(MathAgent().aserve(AGENT_ADDR, log_level="trace"))
+    asyncio.run(MathAgent().aserve(AGENT_ADDR, log_level="warning"))

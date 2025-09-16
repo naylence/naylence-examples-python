@@ -12,7 +12,7 @@ from naylence.agent import (
     Task,
     TaskSendParams,
     TaskState,
-    dev_mode,
+    configs,
     make_task,
     first_data_part,
 )
@@ -83,6 +83,6 @@ class ChatAgent(BaseAgent):
 if __name__ == "__main__":
     asyncio.run(
         ChatAgent().aserve(
-            AGENT_ADDR, root_config=dev_mode.NODE_CONFIG, log_level="info"
+            AGENT_ADDR, root_config=configs.NODE_CONFIG, log_level="info"
         )
     )

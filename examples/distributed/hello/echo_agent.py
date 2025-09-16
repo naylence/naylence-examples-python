@@ -2,7 +2,7 @@ import asyncio
 
 from typing import Any
 from common import AGENT_ADDR
-from naylence.agent import BaseAgent, dev_mode
+from naylence.agent import BaseAgent, configs
 
 
 class EchoAgent(BaseAgent):
@@ -13,6 +13,6 @@ class EchoAgent(BaseAgent):
 if __name__ == "__main__":
     asyncio.run(
         EchoAgent().aserve(
-            AGENT_ADDR, root_config=dev_mode.SENTINEL_CONFIG, log_level="info"
+            AGENT_ADDR, root_config=configs.SENTINEL_CONFIG, log_level="info"
         )
     )

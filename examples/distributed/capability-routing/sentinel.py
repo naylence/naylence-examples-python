@@ -1,4 +1,10 @@
-from naylence.agent.dev_mode import run_sentinel
+import asyncio
+from naylence.fame.sentinel import Sentinel
+from naylence.agent import configs
+
 
 if __name__ == "__main__":
-    run_sentinel(log_level="trace")
+    asyncio.run(
+        Sentinel.aserve(root_config=configs.SENTINEL_CONFIG, log_level="info")
+    )
+

@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from common import AGENT_ADDR
 from naylence.fame.service import operation
 
-from naylence.agent import BaseAgent, dev_mode
+from naylence.agent import BaseAgent, configs
 
 
 class RecordModel(BaseModel):
@@ -53,6 +53,6 @@ class StorageAgent(BaseAgent):
 if __name__ == "__main__":
     asyncio.run(
         StorageAgent().aserve(
-            AGENT_ADDR, root_config=dev_mode.NODE_CONFIG, log_level="trace"
+            AGENT_ADDR, root_config=configs.NODE_CONFIG, log_level="warning"
         )
     )
