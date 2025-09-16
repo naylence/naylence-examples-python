@@ -1027,18 +1027,18 @@ files = [
 
 [[package]]
 name = "naylence-agent-sdk"
-version = "0.3.11"
+version = "0.3.12"
 description = "Naylence Agent SDK"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "naylence_agent_sdk-0.3.11-py3-none-any.whl", hash = "sha256:12b128d80da61954ae78ade9fb0eb4d73f48b676ba8a6dad43602bf34fdb0f12"},
-    {file = "naylence_agent_sdk-0.3.11.tar.gz", hash = "sha256:6b14ddff1be08e980a01ed11bdda3dbf7c484d530062e2e75d8caa6082688fd6"},
+    {file = "naylence_agent_sdk-0.3.12-py3-none-any.whl", hash = "sha256:ef1ef95bb7b59eb49297c37edddc6ada2f6221355a2d08604c2ee8f509b901cd"},
+    {file = "naylence_agent_sdk-0.3.12.tar.gz", hash = "sha256:97d59b454961fa957e2f3c41ac10bf53d42ea246be6837fb64a4a69b638c9159"},
 ]
 
 [package.dependencies]
-naylence-runtime = ">=0.3.11,<0.4.0"
+naylence-runtime = ">=0.3.12,<0.4.0"
 
 [[package]]
 name = "naylence-core"
@@ -1078,14 +1078,14 @@ pydantic = ">=2.11.4,<3.0.0"
 
 [[package]]
 name = "naylence-runtime"
-version = "0.3.11"
+version = "0.3.12"
 description = "Naylence Runtime"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "naylence_runtime-0.3.11-py3-none-any.whl", hash = "sha256:d8a7940655e8780180acfddfb7bf63835c669c9fe263c2640cd7956a084f6287"},
-    {file = "naylence_runtime-0.3.11.tar.gz", hash = "sha256:9fb53327047b25b5e14b71158b4bf0b51219438c65dd571c5f93ad6fc52d7a86"},
+    {file = "naylence_runtime-0.3.12-py3-none-any.whl", hash = "sha256:064e8e8cedb71136357cf5688fcefbd9976f478fdc53ef641337f70f572d44e9"},
+    {file = "naylence_runtime-0.3.12.tar.gz", hash = "sha256:5d8e2ed171a0291185a632586bfd81ce2ed5bcbcc305b98a2ef4d6ae7fa2ab74"},
 ]
 
 [package.dependencies]
@@ -2052,4 +2052,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "a1d17a7578244672350c191094e8787dd93ab14d284698154542b8a0e0a1aa87"
+content-hash = "1a971381885d27f76e485bbf27bf5323422bd14ce42bd3ab2b015543c5f70dcc"
