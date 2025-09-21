@@ -199,16 +199,14 @@ jobs:
             -e SSL_CERT_FILE=/work/config/caddy/data/caddy/pki/authorities/local/root.crt \
             naylence/agent-sdk-adv-python:0.3.14 \
             python3 -c "
-import ssl
-import urllib.request
-import os
-print(f'SSL_CERT_FILE: {os.getenv(\"SSL_CERT_FILE\")}')
+import ssl, urllib.request, os
+print('SSL_CERT_FILE:', os.getenv('SSL_CERT_FILE'))
 try:
     context = ssl.create_default_context()
     with urllib.request.urlopen('https://oauth2-server:443/', context=context, timeout=10) as response:
-        print(f'✅ SSL connection successful: {response.getcode()}')
+        print('✅ SSL connection successful:', response.getcode())
 except Exception as e:
-    print(f'❌ SSL connection failed: {e}')
+    print('❌ SSL connection failed:', e)
 "
           exit 1
         fi
