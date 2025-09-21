@@ -125,7 +125,9 @@ jobs:
         # Ensure proper ownership for Docker operations
         sudo chown -R $USER:$USER /home/runner/work/
         # Make config directories writable for Docker containers to generate files
-        find examples -name "config" -type d -exec chmod -R 755 {} \; 2>/dev/null || true
+        find examples -name "config" -type d -exec chmod 777 {} \; 2>/dev/null || true
+        # Also ensure the examples directories themselves are writable for subdirectory creation
+        find examples -type d -maxdepth 2 -exec chmod 755 {} \; 2>/dev/null || true
     
     - name: Test docker example - ${{ matrix.example }}
       working-directory: ${{ matrix.example }}
