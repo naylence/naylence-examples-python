@@ -179,10 +179,24 @@ jobs:
           cat config/caddy/data/caddy/pki/authorities/local/root.crt | head -5 || echo "No Caddy root.crt"
           echo "=== Generated .env files content ==="
           grep -H SSL_CERT_FILE config/.env.* || echo "No SSL_CERT_FILE found"
-          echo "=== Testing certificate access in working container ==="
-          docker compose exec -T ca-internal ls -la /etc/fame/certs/ || echo "No /etc/fame/certs in ca-internal"
-          docker compose exec -T ca-internal ls -la /work/config/caddy/data/caddy/pki/authorities/local/ || echo "No Caddy CA path in container"
-          docker compose exec -T ca-internal cat /work/config/caddy/data/caddy/pki/authorities/local/root.crt | head -5 || echo "No Caddy root.crt in container"
+          
+          echo "=== Wait for all services to be fully ready ==="
+          # Give more time for services to start up completely
+          echo "Waiting 30 seconds for all services to initialize..."
+          sleep 30
+          
+          echo "=== Check service readiness ==="
+          docker compose ps
+          
+          echo "=== Test direct container connectivity ==="
+          # Test if oauth2-server is responding on its internal port
+          docker compose exec -T oauth2-server-internal curl -f http://localhost:8099/health --max-time 5 || echo "oauth2-server internal health check failed"
+          docker compose exec -T welcome-internal curl -f http://localhost:8090/health --max-time 5 || echo "welcome internal health check failed"
+          docker compose exec -T ca-internal curl -f http://localhost:8091/health --max-time 5 || echo "ca internal health check failed"
+          
+          echo "=== Test SSL proxy connectivity ==="
+          # Test if Caddy is properly proxying to the services
+          docker compose exec -T ca-internal curl -k https://oauth2-server:443/ --max-time 10 || echo "CA->oauth2-server SSL proxy test failed"
           exit 1
         fi
         
