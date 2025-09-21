@@ -99,7 +99,7 @@ services:
       retries: 10
       start_period: 0.5s
       start_interval: 1s
-      
+    restart: on-failure
     env_file:
       - config/.env.sentinel
 
