@@ -18,7 +18,7 @@ services:
       ca-internal:
         condition: service_started
     healthcheck:
-      test: ["CMD", "sh", "-c", "caddy validate --config /etc/caddy/Caddyfile && wget --no-check-certificate --quiet --spider https://localhost/.well-known/jwks.json && test -f /data/caddy/pki/authorities/local/root.crt"]
+      test: ["CMD", "sh", "-c", "test -f /data/caddy/pki/authorities/local/root.crt"]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -30,6 +30,33 @@ services:
           - oauth2-server
           - welcome
           - ca
+
+  caddy-probe:
+    image: curlimages/curl:8.16.0   # has curl + OpenSSL
+    depends_on:
+      caddy:
+        condition: service_healthy
+      oauth2-server-internal:
+        condition: service_started
+    networks:
+      - naylence-net
+    volumes:
+      - .:/work:ro
+    # prove that *real* TLS handshakes succeed with Caddy's local CA
+    command: ["tail", "-f", "/dev/null"]   # keep container alive
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          # verify a real HTTPS handshake to oauth2-server using Caddy's local CA
+          "curl \
+               --cacert /work/config/caddy/data/caddy/pki/authorities/local/root.crt \
+               https://oauth2-server/.well-known/jwks.json"
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+      start_period: 5s
 
   # OAuth2 server - shouldn't be connected to directly.
   # This is for dev purposes only, do not use in production
@@ -81,6 +108,8 @@ services:
     command: ["python", "sentinel.py"]
     depends_on:
       caddy:
+        condition: service_healthy
+      caddy-probe:
         condition: service_healthy
       oauth2-server-internal:
         condition: service_started

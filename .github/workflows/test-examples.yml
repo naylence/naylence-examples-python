@@ -164,8 +164,9 @@ jobs:
         # Run with verbose output and capture logs on failure
         set -e
         echo "Starting containers..."
-        make init
-        docker compose up
+        make
+        sleep 1
+        make run
         # if ! make; then
         #   echo "❌ Container startup failed. Showing logs:"
         #   docker compose logs --tail=100 || true
