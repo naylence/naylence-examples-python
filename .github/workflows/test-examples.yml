@@ -140,16 +140,17 @@ jobs:
         # Make the entire examples directory tree writable for Docker bind mounts
         chmod -R a+w examples/ || true
     
-    - name: Fix SSL certificate paths for containers
+    - name: Debug certificate setup
       run: |
         # Debug: Show what certificates are actually generated
         echo "=== Certificate directories after generation ==="
         find examples -name "certs" -type d -exec ls -la {} \; || true
         find examples -name "caddy" -type d -exec find {} -name "*.crt" -exec ls -la {} \; \; || true
         
-        # Fix SSL_CERT_FILE paths in .env files to use PKI certificates instead of Caddy certificates
-        # This is needed because containers mount PKI certs at /etc/fame/certs but not Caddy certs
-        find examples -name "*.env.*" -type f -exec sed -i 's|SSL_CERT_FILE=/work/config/caddy/data/caddy/pki/authorities/local/root.crt|SSL_CERT_FILE=/etc/fame/certs/root-ca.crt|g' {} \; 2>/dev/null || true
+        # Don't change SSL_CERT_FILE - if it works locally, the config should be correct
+        # Just show what's in the env files for debugging
+        echo "=== Environment files content ==="
+        find examples -name "config/.env.*" -type f -exec echo "=== {} ===" \; -exec head -10 {} \; 2>/dev/null || true
     
     - name: Test docker example - ${{ matrix.example }}
       working-directory: ${{ matrix.example }}
@@ -166,9 +167,17 @@ jobs:
           docker compose logs --tail=100 || true
           echo "=== Container states ==="
           docker compose ps -a || true
-          echo "=== Available certificate files ==="
-          docker compose exec -T sentinel-internal ls -la /etc/fame/certs/ || true
-          docker compose exec -T sentinel-internal cat /etc/fame/certs/root-ca.crt || echo "No root-ca.crt found"
+          echo "=== Host certificate files ==="
+          ls -la config/certs/ || echo "No certs directory"
+          echo "=== Caddy CA certificate ==="
+          ls -la config/caddy/data/caddy/pki/authorities/local/ || echo "No Caddy CA directory"
+          cat config/caddy/data/caddy/pki/authorities/local/root.crt | head -5 || echo "No Caddy root.crt"
+          echo "=== Generated .env files content ==="
+          grep -H SSL_CERT_FILE config/.env.* || echo "No SSL_CERT_FILE found"
+          echo "=== Testing certificate access in working container ==="
+          docker compose exec -T ca-internal ls -la /etc/fame/certs/ || echo "No /etc/fame/certs in ca-internal"
+          docker compose exec -T ca-internal ls -la /work/config/caddy/data/caddy/pki/authorities/local/ || echo "No Caddy CA path in container"
+          docker compose exec -T ca-internal cat /work/config/caddy/data/caddy/pki/authorities/local/root.crt | head -5 || echo "No Caddy root.crt in container"
           exit 1
         fi
         
