@@ -18,7 +18,7 @@ services:
       ca-internal:
         condition: service_started
     healthcheck:
-      test: ["CMD", "sh", "-c", "caddy validate --config /etc/caddy/Caddyfile && wget --no-check-certificate --quiet --spider https://localhost/.well-known/jwks.json && sleep 2"]
+      test: ["CMD", "sh", "-c", "caddy validate --config /etc/caddy/Caddyfile && wget --no-check-certificate --quiet --spider https://localhost/.well-known/jwks.json && sleep 10"]
       interval: 3s
       timeout: 8s
       retries: 20
