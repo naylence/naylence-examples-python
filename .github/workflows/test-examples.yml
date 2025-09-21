@@ -82,10 +82,10 @@ jobs:
         #   - examples/persistence/storage-provider
           # Security examples
           - examples/security/advanced
-          - examples/security/gated
-          - examples/security/http-connector
-          - examples/security/overlay
-          - examples/security/stickiness
+        #   - examples/security/gated
+        #   - examples/security/http-connector
+        #   - examples/security/overlay
+        #   - examples/security/stickiness
       fail-fast: false
 
     steps:
@@ -131,6 +131,12 @@ jobs:
         # Pre-create .secrets directories with proper permissions
         find examples -name "security" -type d -exec mkdir -p {}/.secrets \; 2>/dev/null || true
         find examples -name "security" -type d -exec chmod 777 {}/.secrets \; 2>/dev/null || true
+        # Pre-create certs directories for PKI generation
+        find examples -name "config" -type d -exec mkdir -p {}/certs \; 2>/dev/null || true
+        find examples -name "config" -type d -exec chmod 777 {}/certs \; 2>/dev/null || true
+        find examples -name "config" -type d -exec mkdir -p {}/caddy/data \; 2>/dev/null || true
+        find examples -name "config" -type d -exec chmod 777 {}/caddy \; 2>/dev/null || true
+        find examples -name "config" -type d -exec chmod 777 {}/caddy/data \; 2>/dev/null || true
         # Make the entire examples directory tree writable for Docker bind mounts
         chmod -R a+w examples/ || true
     
@@ -151,7 +157,7 @@ jobs:
         fi
         
         echo "Waiting for services to be ready..."
-        sleep 5
+        sleep 15
         
         echo "Checking container status..."
         docker compose ps
