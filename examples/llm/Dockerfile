@@ -1,4 +1,4 @@
-FROM naylence/agent-sdk-python:0.3.11
+FROM naylence/agent-sdk-python:0.3.14
 
 # Install additional packages required for LLM examples
 RUN pip install --no-cache-dir openai

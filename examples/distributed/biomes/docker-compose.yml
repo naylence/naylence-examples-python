@@ -1,5 +1,5 @@
 x-images: &images
-  base: &base-image naylence/agent-sdk-python:0.3.11
+  base: &base-image naylence/agent-sdk-python:0.3.14
 
 services:
 

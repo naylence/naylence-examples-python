@@ -1,0 +1,130 @@
+name: Test Examples
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-simple-examples:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        example:
+          - echo_agent.py
+          - function_as_agent.py
+          - rpc_agent.py
+          - agent_with_bg_task.py
+          - a2a_agent.py
+          - agent_ping_pong.py
+          - hello.py
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+    
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+    
+    - name: Install project
+      run: poetry install --no-interaction
+    
+    - name: Test simple example - ${{ matrix.example }}
+      working-directory: examples/simple
+      run: |
+        poetry run python ${{ matrix.example }}
+
+  test-docker-examples:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        example:
+          # Delivery examples
+          - examples/delivery/agent-crash-recovery
+          - examples/delivery/retry-on-no-ack-received
+          # Distributed examples (excluding LLM-based ones)
+          - examples/distributed/biomes
+          - examples/distributed/cancellable
+          - examples/distributed/capability-routing
+          - examples/distributed/hello
+          - examples/distributed/hello-with-sentinel
+          - examples/distributed/peers
+          - examples/distributed/push-notifications
+          - examples/distributed/rpc
+          - examples/distributed/status-subscription
+          # Monitoring examples
+          - examples/monitoring/open-telemetry
+          # Persistence examples
+          - examples/persistence/agent-state
+          - examples/persistence/storage-provider
+          # Security examples
+          - examples/security/advanced
+          - examples/security/gated
+          - examples/security/http-connector
+          - examples/security/overlay
+          - examples/security/stickiness
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+    
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+    
+    - name: Install project
+      run: poetry install --no-interaction
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Test docker example - ${{ matrix.example }}
+      working-directory: ${{ matrix.example }}
+      run: |
+        echo "Testing example: ${{ matrix.example }}"
+        # Activate poetry environment for Python dependencies
+        source ../../.venv/bin/activate
+        make && sleep 1 && make run && make clean
+      timeout-minutes: 10

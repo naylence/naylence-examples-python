@@ -1,6 +1,9 @@
 .DEFAULT_GOAL := start
 
-start:
+build:
+	docker compose build
+
+start: build
 	docker compose up -d
 
 stop:
