@@ -225,10 +225,10 @@ jobs:
           # If sentinel is not healthy, this is still an issue but let's not exit yet - continue to see what happens
           if ! docker compose ps sentinel-internal | grep -q "healthy"; then
             echo "⚠️ Sentinel is not healthy but continuing to test what happens..."
+            exit 1
           else
             echo "✅ Sentinel is now healthy!"
           fi
-          exit 1
         fi
         
         echo "Waiting for services to be ready..."
