@@ -188,15 +188,22 @@ jobs:
           echo "=== Check service readiness ==="
           docker compose ps
           
-          echo "=== Test direct container connectivity ==="
-          # Test if oauth2-server is responding on its internal port
-          docker compose exec -T oauth2-server-internal curl -f http://localhost:8099/health --max-time 5 || echo "oauth2-server internal health check failed"
-          docker compose exec -T welcome-internal curl -f http://localhost:8090/health --max-time 5 || echo "welcome internal health check failed"
-          docker compose exec -T ca-internal curl -f http://localhost:8091/health --max-time 5 || echo "ca internal health check failed"
-          
-          echo "=== Test SSL proxy connectivity ==="
-          # Test if Caddy is properly proxying to the services
-          docker compose exec -T ca-internal curl -k https://oauth2-server:443/ --max-time 10 || echo "CA->oauth2-server SSL proxy test failed"
+          echo "=== Test SSL certificate access in containers ==="
+          # Start a temporary container to test certificate access
+          echo "Testing certificate file access..."
+          docker run --rm --network advanced_naylence-net \
+            -v "$(pwd)":/work:ro \
+            naylence/agent-sdk-adv-python:0.3.14 \
+            sh -c "
+              echo 'SSL_CERT_FILE environment:'; 
+              export SSL_CERT_FILE=/work/config/caddy/data/caddy/pki/authorities/local/root.crt;
+              echo \$SSL_CERT_FILE;
+              echo 'Testing file access:';
+              ls -la /work/config/caddy/data/caddy/pki/authorities/local/ || echo 'Cannot access certificate directory';
+              cat /work/config/caddy/data/caddy/pki/authorities/local/root.crt | head -3 || echo 'Cannot read certificate file';
+              echo 'Testing Python SSL context:';
+              python3 -c 'import ssl, os; print(f\"SSL_CERT_FILE={os.getenv(\"SSL_CERT_FILE\")}\"); ctx=ssl.create_default_context(); print(f\"CA certs loaded: {len(ctx.get_ca_certs())}\")' || echo 'SSL context test failed'
+            "
           exit 1
         fi
         
