@@ -29,6 +29,7 @@ run:
 	@docker run --rm \
 	-v "$(shell pwd):/work:ro" \
 	-v ./config/certs:/etc/fame/certs \
+	-v "$(shell basename "$(shell pwd)")_caddy-data:/caddy-data:ro" \
 	-w /work \
 	--network "$(shell basename "$(shell pwd)")_naylence-net" \
 	--env-file config/.env.client \
@@ -39,6 +40,7 @@ run-verbose:
 	@docker run --rm \
 	-v "$(shell pwd):/work:ro" \
 	-v ./config/certs:/etc/fame/certs \
+	-v "$(shell basename "$(shell pwd)")_caddy-data:/caddy-data:ro" \
 	-w /work \
 	--network "$(shell basename "$(shell pwd)")_naylence-net" \
 	--env-file config/.env.client \

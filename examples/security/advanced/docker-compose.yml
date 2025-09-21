@@ -1,6 +1,9 @@
 x-images: &images
   base: &base-image naylence/agent-sdk-adv-python:0.3.14
 
+volumes:
+  caddy-data:
+
 services:
   # Sentinel reverse proxy
   caddy:
@@ -9,7 +12,7 @@ services:
       - "443:443"
     volumes:
       - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./config/caddy/data:/data
+      - caddy-data:/data
     depends_on:
       oauth2-server-internal:
         condition: service_started
@@ -18,11 +21,11 @@ services:
       ca-internal:
         condition: service_started
     healthcheck:
-      test: ["CMD", "sh", "-c", "test -f /data/caddy/pki/authorities/local/root.crt"]
-      interval: 2s
-      timeout: 5s
+      test: ["CMD", "sh", "-c", "test -f /data/caddy/pki/authorities/local/root.crt && ([ \"$(stat -c '%a' /data/caddy/pki/authorities/local/root.crt)\" = \"644\" ] || chmod -R a+rX /data/caddy/pki) && echo '' | nc -w 1 localhost 443"]
+      interval: 5s
+      timeout: 10s
       retries: 30
-      start_period: 10s
+      start_period: 15s
     networks:
       naylence-net:
         aliases:
@@ -30,33 +33,6 @@ services:
           - oauth2-server
           - welcome
           - ca
-
-  caddy-probe:
-    image: curlimages/curl:8.16.0   # has curl + OpenSSL
-    depends_on:
-      caddy:
-        condition: service_healthy
-      oauth2-server-internal:
-        condition: service_started
-    networks:
-      - naylence-net
-    volumes:
-      - .:/work:ro
-    # prove that *real* TLS handshakes succeed with Caddy's local CA
-    command: ["tail", "-f", "/dev/null"]   # keep container alive
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          # verify a real HTTPS handshake to oauth2-server using Caddy's local CA
-          "curl \
-               --cacert /work/config/caddy/data/caddy/pki/authorities/local/root.crt \
-               https://oauth2-server/.well-known/jwks.json"
-        ]
-      interval: 2s
-      timeout: 5s
-      retries: 60
-      start_period: 5s
 
   # OAuth2 server - shouldn't be connected to directly.
   # This is for dev purposes only, do not use in production
@@ -80,6 +56,7 @@ services:
       - naylence-net
     volumes:
       - .:/work:ro
+      - caddy-data:/caddy-data:ro
       - ./config/certs:/etc/fame/certs:ro
       - ./config/ca.yml:/etc/fame/fame-config.yml:ro
     env_file:
@@ -94,22 +71,21 @@ services:
       - naylence-net
     volumes:
       - .:/work:ro
+      - caddy-data:/caddy-data:ro
       - ./config/welcome.yml:/etc/fame/fame-config.yml:ro
     env_file:
       - config/.env.welcome
 
-  # Real sentinel - shouldn't be connected to directly
   sentinel-internal:
     image: *base-image
     volumes:
       - .:/work:ro
+      - caddy-data:/caddy-data:ro
       - ./config/certs:/etc/fame/certs:ro
     working_dir: /work
     command: ["python", "sentinel.py"]
     depends_on:
       caddy:
-        condition: service_healthy
-      caddy-probe:
         condition: service_healthy
       oauth2-server-internal:
         condition: service_started
@@ -132,11 +108,11 @@ services:
     env_file:
       - config/.env.sentinel
 
-  # Math Agent service - connects to sentinel and provides math functionality
   math-agent:
     image: *base-image
     volumes:
       - .:/work:ro
+      - caddy-data:/caddy-data:ro
       - ./config/certs:/etc/fame/certs:ro
     working_dir: /work
     command: ["python", "math_agent.py"]
