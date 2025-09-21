@@ -120,6 +120,13 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     
+    - name: Fix directory permissions
+      run: |
+        # Ensure the examples directory and subdirectories are writable
+        sudo chown -R $USER:$USER /home/runner/work/
+        find examples -type d -exec chmod 755 {} \;
+        find examples -name "config" -type d -exec chmod 777 {} \; 2>/dev/null || true
+    
     - name: Test docker example - ${{ matrix.example }}
       working-directory: ${{ matrix.example }}
       run: |
