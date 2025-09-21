@@ -180,29 +180,10 @@ jobs:
           echo "=== Generated .env files content ==="
           grep -H SSL_CERT_FILE config/.env.* || echo "No SSL_CERT_FILE found"
           
-          echo "=== Container startup failed, but this might be expected ==="
-          echo "=== Let's check if services are working after dependencies resolve ==="
-          echo "Waiting 30 seconds for health checks and dependencies..."
-          sleep 30
-          
-          echo "=== Check service status after dependency resolution ==="
-          docker compose ps
+          else
+          # Docker examples
+          echo "Running docker example in: ${{ matrix.example }}"
+          cd ${{ matrix.example }}
+          make init && docker compose up && make run && make clean
         fi
-        
-        echo "Waiting for services to be ready..."
-        sleep 15
-        
-        echo "Checking container status..."
-        docker compose ps
-        
-        echo "Running client..."
-        if ! make run; then
-          echo "❌ Client run failed. Showing logs:"
-          docker compose logs --tail=50 || true
-          make clean || true
-          exit 1
-        fi
-        
-        echo "Cleaning up..."
-        make clean
       timeout-minutes: 10
