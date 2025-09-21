@@ -85,7 +85,7 @@ jobs:
           - examples/security/gated
           - examples/security/http-connector
           - examples/security/overlay
-        #   - examples/security/stickiness
+          - examples/security/stickiness
       fail-fast: false
 
     steps:

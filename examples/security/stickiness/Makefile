@@ -24,6 +24,7 @@ run:
 	@docker run --rm \
 	-v "$(shell pwd):/work:ro" \
 	-v ./config/certs:/etc/fame/certs \
+	-v "$(shell basename "$(shell pwd)")_caddy-data:/caddy-data:ro" \
 	-w /work \
 	--network "$(shell basename "$(shell pwd)")_naylence-net" \
 	--env-file config/.env.client \
@@ -34,6 +35,7 @@ run-verbose:
 	@docker run --rm \
 	-v "$(shell pwd):/work:ro" \
 	-v ./config/certs:/etc/fame/certs \
+	-v "$(shell basename "$(shell pwd)")_caddy-data:/caddy-data:ro" \
 	-w /work \
 	--network "$(shell basename "$(shell pwd)")_naylence-net" \
 	--env-file config/.env.client \
@@ -44,7 +46,18 @@ run-verbose:
 clean: stop
 	@echo "🧹 Cleaning generated files..."
 	@cd config && rm -rf .env.client .env.agent .env.oauth2-server .env.sentinel .env.welcome .env.ca
-	@rm -rf ../.secrets
-	@rm -rf config/certs
-	@rm -rf config/caddy/data
-	@echo "✅ Cleaned generated .env files, PKI directory, and secrets directory"
+	@echo "🧹 Cleaning secrets directory with Docker..."
+	@docker run --rm \
+		-v "$(shell pwd)/../..:/work" \
+		-w /work \
+		$(DOCKER_IMAGE) \
+		rm -rf ./security/.secrets 2>/dev/null || true
+	@echo "🧹 Cleaning PKI certificates with Docker..."
+	@docker run --rm \
+		-v "$(shell pwd):/work" \
+		-w /work \
+		$(DOCKER_IMAGE) \
+		rm -rf ./config/certs 2>/dev/null || true
+	@echo "🧹 Removing Caddy named volume..."
+	@docker volume rm "$(shell basename "$(shell pwd)")_caddy-data" 2>/dev/null || true
+	@echo "✅ Cleaned generated .env files, PKI directory, secrets directory, and Caddy volume"
