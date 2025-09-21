@@ -68,6 +68,13 @@ services:
       - ./config/certs:/etc/fame/certs:ro
     working_dir: /work
     command: ["python", "sentinel.py"]
+    depends_on:
+      caddy:
+        condition: service_started
+      oauth2-server-internal:
+        condition: service_started
+      welcome-internal:
+        condition: service_started
     # ports:
     #   - "8000:8000"
     networks:

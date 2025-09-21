@@ -180,30 +180,36 @@ jobs:
           echo "=== Generated .env files content ==="
           grep -H SSL_CERT_FILE config/.env.* || echo "No SSL_CERT_FILE found"
           
-          echo "=== Wait for all services to be fully ready ==="
-          # Give more time for services to start up completely
-          echo "Waiting 30 seconds for all services to initialize..."
-          sleep 30
+          echo "=== Wait for Caddy SSL setup to complete ==="
+          # Wait specifically for Caddy to finish generating all certificates
+          echo "Waiting for Caddy to complete SSL certificate generation..."
+          timeout 120 bash -c 'while ! docker compose logs caddy 2>/dev/null | grep -q "serving initial configuration"; do sleep 2; echo "Waiting for Caddy SSL setup..."; done' || echo "Caddy SSL setup timeout"
+          
+          echo "=== Wait additional time for SSL endpoints to be ready ==="
+          echo "Waiting additional 15 seconds for SSL endpoints to be fully ready..."
+          sleep 15
           
           echo "=== Check service readiness ==="
           docker compose ps
           
-          echo "=== Test SSL certificate access in containers ==="
-          # Start a temporary container to test certificate access
-          echo "Testing certificate file access..."
+          echo "=== Test SSL certificate in fresh container ==="
+          # Test SSL in a fresh container that mimics the sentinel environment
           docker run --rm --network advanced_naylence-net \
             -v "$(pwd)":/work:ro \
+            -e SSL_CERT_FILE=/work/config/caddy/data/caddy/pki/authorities/local/root.crt \
             naylence/agent-sdk-adv-python:0.3.14 \
-            sh -c "
-              echo 'SSL_CERT_FILE environment:'; 
-              export SSL_CERT_FILE=/work/config/caddy/data/caddy/pki/authorities/local/root.crt;
-              echo \$SSL_CERT_FILE;
-              echo 'Testing file access:';
-              ls -la /work/config/caddy/data/caddy/pki/authorities/local/ || echo 'Cannot access certificate directory';
-              cat /work/config/caddy/data/caddy/pki/authorities/local/root.crt | head -3 || echo 'Cannot read certificate file';
-              echo 'Testing Python SSL context:';
-              python3 -c 'import ssl, os; print(f\"SSL_CERT_FILE={os.getenv(\"SSL_CERT_FILE\")}\"); ctx=ssl.create_default_context(); print(f\"CA certs loaded: {len(ctx.get_ca_certs())}\")' || echo 'SSL context test failed'
-            "
+            python3 -c "
+import ssl
+import urllib.request
+import os
+print(f'SSL_CERT_FILE: {os.getenv(\"SSL_CERT_FILE\")}')
+try:
+    context = ssl.create_default_context()
+    with urllib.request.urlopen('https://oauth2-server:443/', context=context, timeout=10) as response:
+        print(f'✅ SSL connection successful: {response.getcode()}')
+except Exception as e:
+    print(f'❌ SSL connection failed: {e}')
+"
           exit 1
         fi
         
