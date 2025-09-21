@@ -137,6 +137,8 @@ jobs:
         find examples -name "config" -type d -exec mkdir -p {}/caddy/data \; 2>/dev/null || true
         find examples -name "config" -type d -exec chmod 777 {}/caddy \; 2>/dev/null || true
         find examples -name "config" -type d -exec chmod 777 {}/caddy/data \; 2>/dev/null || true
+        # Make caddy data directory recursively accessible so containers can read Caddy's CA
+        find examples -name "caddy" -type d -exec chmod -R 755 {} \; 2>/dev/null || true
         # Make the entire examples directory tree writable for Docker bind mounts
         chmod -R a+w examples/ || true
     
@@ -169,7 +171,10 @@ jobs:
           docker compose ps -a || true
           echo "=== Host certificate files ==="
           ls -la config/certs/ || echo "No certs directory"
-          echo "=== Caddy CA certificate ==="
+          echo "=== Fix Caddy data permissions and retry ==="
+          # Caddy creates files with restrictive permissions, fix them so containers can access
+          sudo chmod -R 755 config/caddy/data/ 2>/dev/null || true
+          echo "=== Caddy CA certificate after permission fix ==="
           ls -la config/caddy/data/caddy/pki/authorities/local/ || echo "No Caddy CA directory"
           cat config/caddy/data/caddy/pki/authorities/local/root.crt | head -5 || echo "No Caddy root.crt"
           echo "=== Generated .env files content ==="
