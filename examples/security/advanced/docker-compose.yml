@@ -18,11 +18,11 @@ services:
       ca-internal:
         condition: service_started
     healthcheck:
-      test: ["CMD", "sh", "-c", "caddy validate --config /etc/caddy/Caddyfile && wget --no-check-certificate --quiet --spider https://localhost/.well-known/jwks.json"]
-      interval: 2s
-      timeout: 5s
-      retries: 30
-      start_period: 10s
+      test: ["CMD", "sh", "-c", "caddy validate --config /etc/caddy/Caddyfile && wget --no-check-certificate --quiet --spider https://localhost/.well-known/jwks.json && sleep 2"]
+      interval: 3s
+      timeout: 8s
+      retries: 20
+      start_period: 15s
     networks:
       naylence-net:
         aliases:
