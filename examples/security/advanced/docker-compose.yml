@@ -11,11 +11,16 @@ services:
       - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./config/caddy/data:/data
     depends_on:
-      - ca-internal
+      oauth2-server-internal:
+        condition: service_started
+      welcome-internal:
+        condition: service_started
+      ca-internal:
+        condition: service_started
     healthcheck:
-      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      test: ["CMD", "sh", "-c", "caddy validate --config /etc/caddy/Caddyfile && wget --no-check-certificate --quiet --spider https://localhost/.well-known/jwks.json"]
       interval: 2s
-      timeout: 3s
+      timeout: 5s
       retries: 30
       start_period: 10s
     networks:
