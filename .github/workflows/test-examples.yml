@@ -140,6 +140,17 @@ jobs:
         # Make the entire examples directory tree writable for Docker bind mounts
         chmod -R a+w examples/ || true
     
+    - name: Fix SSL certificate paths for containers
+      run: |
+        # Debug: Show what certificates are actually generated
+        echo "=== Certificate directories after generation ==="
+        find examples -name "certs" -type d -exec ls -la {} \; || true
+        find examples -name "caddy" -type d -exec find {} -name "*.crt" -exec ls -la {} \; \; || true
+        
+        # Fix SSL_CERT_FILE paths in .env files to use PKI certificates instead of Caddy certificates
+        # This is needed because containers mount PKI certs at /etc/fame/certs but not Caddy certs
+        find examples -name "*.env.*" -type f -exec sed -i 's|SSL_CERT_FILE=/work/config/caddy/data/caddy/pki/authorities/local/root.crt|SSL_CERT_FILE=/etc/fame/certs/root-ca.crt|g' {} \; 2>/dev/null || true
+    
     - name: Test docker example - ${{ matrix.example }}
       working-directory: ${{ matrix.example }}
       run: |
@@ -152,7 +163,12 @@ jobs:
         echo "Starting containers..."
         if ! make; then
           echo "❌ Container startup failed. Showing logs:"
-          docker compose logs --tail=50 || true
+          docker compose logs --tail=100 || true
+          echo "=== Container states ==="
+          docker compose ps -a || true
+          echo "=== Available certificate files ==="
+          docker compose exec -T sentinel-internal ls -la /etc/fame/certs/ || true
+          docker compose exec -T sentinel-internal cat /etc/fame/certs/root-ca.crt || echo "No root-ca.crt found"
           exit 1
         fi
         
