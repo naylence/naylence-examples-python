@@ -124,7 +124,7 @@ jobs:
       working-directory: ${{ matrix.example }}
       run: |
         echo "Testing example: ${{ matrix.example }}"
-        # Activate poetry environment for Python dependencies
-        source ../../.venv/bin/activate
+        # Set up environment to use poetry's virtual environment
+        export PATH="$(cd ../.. && poetry env info --path)/bin:$PATH"
         make && sleep 1 && make run && make clean
       timeout-minutes: 10
