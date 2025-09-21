@@ -133,5 +133,5 @@ jobs:
       working-directory: ${{ matrix.example }}
       run: |
         echo "Testing example: ${{ matrix.example }}"
-        make && make run && make clean
+        make && sleep 1 && make run && make clean
       timeout-minutes: 10
