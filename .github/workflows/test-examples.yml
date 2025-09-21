@@ -199,6 +199,17 @@ jobs:
             -e SSL_CERT_FILE=/work/config/caddy/data/caddy/pki/authorities/local/root.crt \
             naylence/agent-sdk-adv-python:0.3.14 \
             python3 -c 'import ssl, urllib.request, os; print("SSL_CERT_FILE:", os.getenv("SSL_CERT_FILE")); context = ssl.create_default_context(); urllib.request.urlopen("https://oauth2-server:443/", context=context, timeout=10); print("✅ SSL connection successful")' || echo "❌ SSL connection failed"
+          
+          echo "=== Restart sentinel now that SSL is ready ==="
+          # The sentinel failed during initial startup, but now SSL is ready - restart it
+          docker compose stop sentinel-internal || true
+          docker compose rm -f sentinel-internal || true
+          echo "Starting sentinel with SSL ready..."
+          docker compose up -d sentinel-internal
+          
+          echo "=== Wait for sentinel to be healthy ==="
+          # Wait for sentinel to become healthy (has health check in docker-compose)
+          timeout 60 bash -c 'until docker compose ps sentinel-internal | grep -q "healthy"; do sleep 2; echo "Waiting for sentinel health check..."; done' || echo "Sentinel health check timeout"
           exit 1
         fi
         
