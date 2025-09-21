@@ -122,71 +122,14 @@ jobs:
     
     - name: Fix directory permissions
       run: |
-        # Ensure the examples directory and subdirectories are writable by all users (for Docker containers)
+        # Ensure proper ownership for Docker operations
         sudo chown -R $USER:$USER /home/runner/work/
-        find examples -type d -exec chmod 755 {} \;
-        # Make config and security directories world-writable for Docker containers
-        find examples -name "config" -type d -exec chmod 777 {} \; 2>/dev/null || true
-        find examples -name ".secrets" -type d -exec chmod 777 {} \; 2>/dev/null || true
-        # Pre-create .secrets directories with proper permissions
-        find examples -name "security" -type d -exec mkdir -p {}/.secrets \; 2>/dev/null || true
-        find examples -name "security" -type d -exec chmod 777 {}/.secrets \; 2>/dev/null || true
-        # Pre-create certs directories for PKI generation
-        find examples -name "config" -type d -exec mkdir -p {}/certs \; 2>/dev/null || true
-        find examples -name "config" -type d -exec chmod 777 {}/certs \; 2>/dev/null || true
-        find examples -name "config" -type d -exec mkdir -p {}/caddy/data \; 2>/dev/null || true
-        find examples -name "config" -type d -exec chmod 777 {}/caddy \; 2>/dev/null || true
-        find examples -name "config" -type d -exec chmod 777 {}/caddy/data \; 2>/dev/null || true
-        # Make caddy data directory recursively accessible so containers can read Caddy's CA
-        find examples -name "caddy" -type d -exec chmod -R 755 {} \; 2>/dev/null || true
-        # Make the entire examples directory tree writable for Docker bind mounts
-        chmod -R a+w examples/ || true
-    
-    - name: Debug certificate setup
-      run: |
-        # Debug: Show what certificates are actually generated
-        echo "=== Certificate directories after generation ==="
-        find examples -name "certs" -type d -exec ls -la {} \; || true
-        find examples -name "caddy" -type d -exec find {} -name "*.crt" -exec ls -la {} \; \; || true
-        
-        # Don't change SSL_CERT_FILE - if it works locally, the config should be correct
-        # Just show what's in the env files for debugging
-        echo "=== Environment files content ==="
-        find examples -name "config/.env.*" -type f -exec echo "=== {} ===" \; -exec head -10 {} \; 2>/dev/null || true
+        # Make config directories writable for Docker containers to generate files
+        find examples -name "config" -type d -exec chmod -R 755 {} \; 2>/dev/null || true
     
     - name: Test docker example - ${{ matrix.example }}
       working-directory: ${{ matrix.example }}
       run: |
         echo "Testing example: ${{ matrix.example }}"
-        # Set up environment to use poetry's virtual environment
-        export PATH="$(cd ../.. && poetry env info --path)/bin:$PATH"
-        
-        # Run with verbose output and capture logs on failure
-        set -e
-        echo "Starting containers..."
-        make
-        sleep 1
-        make run
-        # if ! make; then
-        #   echo "❌ Container startup failed. Showing logs:"
-        #   docker compose logs --tail=100 || true
-        #   echo "=== Container states ==="
-        #   docker compose ps -a || true
-        #   echo "=== Host certificate files ==="
-        #   ls -la config/certs/ || echo "No certs directory"
-        #   echo "=== Fix Caddy data permissions and retry ==="
-        #   # Caddy creates files with restrictive permissions, fix them so containers can access
-        #   sudo chmod -R 755 config/caddy/data/ 2>/dev/null || true
-        #   echo "=== Caddy CA certificate after permission fix ==="
-        #   ls -la config/caddy/data/caddy/pki/authorities/local/ || echo "No Caddy CA directory"
-        #   cat config/caddy/data/caddy/pki/authorities/local/root.crt | head -5 || echo "No Caddy root.crt"
-        #   echo "=== Generated .env files content ==="
-        #   grep -H SSL_CERT_FILE config/.env.* || echo "No SSL_CERT_FILE found"
-          
-        #   else
-        #   # Docker examples
-        #   echo "Running docker example in: ${{ matrix.example }}"
-        #   cd ${{ matrix.example }}
-        #   make init && docker compose up && make run && make clean
-        # fi
+        make && make run && make clean
       timeout-minutes: 10
