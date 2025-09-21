@@ -12,6 +12,12 @@ services:
       - ./config/caddy/data:/data
     depends_on:
       - ca-internal
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
     networks:
       naylence-net:
         aliases:
@@ -70,7 +76,7 @@ services:
     command: ["python", "sentinel.py"]
     depends_on:
       caddy:
-        condition: service_started
+        condition: service_healthy
       oauth2-server-internal:
         condition: service_started
       welcome-internal:
