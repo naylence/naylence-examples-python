@@ -209,7 +209,25 @@ jobs:
           
           echo "=== Wait for sentinel to be healthy ==="
           # Wait for sentinel to become healthy (has health check in docker-compose)
-          timeout 60 bash -c 'until docker compose ps sentinel-internal | grep -q "healthy"; do sleep 2; echo "Waiting for sentinel health check..."; done' || echo "Sentinel health check timeout"
+          echo "Checking sentinel status..."
+          docker compose ps sentinel-internal
+          echo "Waiting for sentinel to be healthy..."
+          timeout 60 bash -c 'while ! docker compose ps sentinel-internal | grep -q "healthy"; do 
+            docker compose ps sentinel-internal || true; 
+            echo "Current status: $(docker compose ps sentinel-internal --format "table {{.Status}}" | tail -1)"; 
+            sleep 2; 
+          done' || echo "Sentinel health check timeout"
+          
+          echo "=== Final sentinel status check ==="
+          docker compose ps sentinel-internal
+          docker compose logs sentinel-internal --tail=20 || true
+          
+          # If sentinel is not healthy, this is still an issue but let's not exit yet - continue to see what happens
+          if ! docker compose ps sentinel-internal | grep -q "healthy"; then
+            echo "⚠️ Sentinel is not healthy but continuing to test what happens..."
+          else
+            echo "✅ Sentinel is now healthy!"
+          fi
           exit 1
         fi
         
