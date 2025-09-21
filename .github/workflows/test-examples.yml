@@ -164,26 +164,28 @@ jobs:
         # Run with verbose output and capture logs on failure
         set -e
         echo "Starting containers..."
-        if ! make; then
-          echo "❌ Container startup failed. Showing logs:"
-          docker compose logs --tail=100 || true
-          echo "=== Container states ==="
-          docker compose ps -a || true
-          echo "=== Host certificate files ==="
-          ls -la config/certs/ || echo "No certs directory"
-          echo "=== Fix Caddy data permissions and retry ==="
-          # Caddy creates files with restrictive permissions, fix them so containers can access
-          sudo chmod -R 755 config/caddy/data/ 2>/dev/null || true
-          echo "=== Caddy CA certificate after permission fix ==="
-          ls -la config/caddy/data/caddy/pki/authorities/local/ || echo "No Caddy CA directory"
-          cat config/caddy/data/caddy/pki/authorities/local/root.crt | head -5 || echo "No Caddy root.crt"
-          echo "=== Generated .env files content ==="
-          grep -H SSL_CERT_FILE config/.env.* || echo "No SSL_CERT_FILE found"
+        make init
+        docker compose up
+        # if ! make; then
+        #   echo "❌ Container startup failed. Showing logs:"
+        #   docker compose logs --tail=100 || true
+        #   echo "=== Container states ==="
+        #   docker compose ps -a || true
+        #   echo "=== Host certificate files ==="
+        #   ls -la config/certs/ || echo "No certs directory"
+        #   echo "=== Fix Caddy data permissions and retry ==="
+        #   # Caddy creates files with restrictive permissions, fix them so containers can access
+        #   sudo chmod -R 755 config/caddy/data/ 2>/dev/null || true
+        #   echo "=== Caddy CA certificate after permission fix ==="
+        #   ls -la config/caddy/data/caddy/pki/authorities/local/ || echo "No Caddy CA directory"
+        #   cat config/caddy/data/caddy/pki/authorities/local/root.crt | head -5 || echo "No Caddy root.crt"
+        #   echo "=== Generated .env files content ==="
+        #   grep -H SSL_CERT_FILE config/.env.* || echo "No SSL_CERT_FILE found"
           
-          else
-          # Docker examples
-          echo "Running docker example in: ${{ matrix.example }}"
-          cd ${{ matrix.example }}
-          make init && docker compose up && make run && make clean
-        fi
+        #   else
+        #   # Docker examples
+        #   echo "Running docker example in: ${{ matrix.example }}"
+        #   cd ${{ matrix.example }}
+        #   make init && docker compose up && make run && make clean
+        # fi
       timeout-minutes: 10
