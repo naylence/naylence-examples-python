@@ -122,10 +122,17 @@ jobs:
     
     - name: Fix directory permissions
       run: |
-        # Ensure the examples directory and subdirectories are writable
+        # Ensure the examples directory and subdirectories are writable by all users (for Docker containers)
         sudo chown -R $USER:$USER /home/runner/work/
         find examples -type d -exec chmod 755 {} \;
+        # Make config and security directories world-writable for Docker containers
         find examples -name "config" -type d -exec chmod 777 {} \; 2>/dev/null || true
+        find examples -name ".secrets" -type d -exec chmod 777 {} \; 2>/dev/null || true
+        # Pre-create .secrets directories with proper permissions
+        find examples -name "security" -type d -exec mkdir -p {}/.secrets \; 2>/dev/null || true
+        find examples -name "security" -type d -exec chmod 777 {}/.secrets \; 2>/dev/null || true
+        # Make the entire examples directory tree writable for Docker bind mounts
+        chmod -R a+w examples/ || true
     
     - name: Test docker example - ${{ matrix.example }}
       working-directory: ${{ matrix.example }}
