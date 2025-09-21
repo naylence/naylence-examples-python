@@ -51,7 +51,17 @@ run-verbose:
 clean: stop
 	@echo "🧹 Cleaning generated files..."
 	@cd config && rm -rf .env.client .env.agent .env.oauth2-server .env.sentinel .env.welcome .env.ca
-	@rm -rf ../.secrets
-	@rm -rf config/certs
+	@echo "🧹 Cleaning secrets directory with Docker..."
+	@docker run --rm \
+		-v "$(shell pwd)/../..:/work" \
+		-w /work \
+		$(DOCKER_IMAGE) \
+		rm -rf ./security/.secrets 2>/dev/null || true
+	@echo "🧹 Cleaning PKI certificates with Docker..."
+	@docker run --rm \
+		-v "$(shell pwd):/work" \
+		-w /work \
+		$(DOCKER_IMAGE) \
+		rm -rf ./config/certs 2>/dev/null || true
 	@rm -rf config/caddy/data
 	@echo "✅ Cleaned generated .env files, PKI directory, and secrets directory"
