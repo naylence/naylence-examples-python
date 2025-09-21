@@ -83,7 +83,7 @@ jobs:
           # Security examples
           - examples/security/advanced
           - examples/security/gated
-        #   - examples/security/http-connector
+          - examples/security/http-connector
           - examples/security/overlay
         #   - examples/security/stickiness
       fail-fast: false
