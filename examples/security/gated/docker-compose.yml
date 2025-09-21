@@ -9,7 +9,7 @@ services:
       - "443:443"
     volumes:
       - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./config/caddy/data:/data
+      - caddy-data:/data
     depends_on:
       sentinel-internal:
         condition: service_healthy
@@ -20,6 +20,24 @@ services:
         aliases:
           - sentinel
           - oauth2-server
+    healthcheck:
+      test: |
+        sh -c '
+        # Check if certificates exist
+        if [ ! -f "/data/caddy/pki/authorities/local/root.crt" ]; then
+          echo "Root certificate not found"
+          exit 1
+        fi
+        
+        # Ensure certificates have proper permissions for sharing
+        chmod -R 755 /data/caddy/pki/ 2>/dev/null || true
+        
+        echo "Caddy healthy with accessible certificates"
+        '
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
 
   # OAuth2 server - shouldn't be connected to directly.
   # This is for dev purposes only, do not use in production
@@ -38,6 +56,7 @@ services:
     image: *base-image
     volumes:
       - .:/work:ro
+      - caddy-data:/caddy-data:ro
     working_dir: /work
     command: ["python", "sentinel.py"]
     # ports:
@@ -61,6 +80,7 @@ services:
     image: *base-image
     volumes:
       - .:/work:ro
+      - caddy-data:/caddy-data:ro
     working_dir: /work
     command: ["python", "math_agent.py"]
     healthcheck:
@@ -73,6 +93,8 @@ services:
     depends_on:
       sentinel-internal:
         condition: service_healthy
+      caddy:
+        condition: service_healthy
     networks:
       - naylence-net
     env_file:
@@ -83,3 +105,6 @@ services:
 networks:
   naylence-net:
     driver: bridge
+
+volumes:
+  caddy-data:

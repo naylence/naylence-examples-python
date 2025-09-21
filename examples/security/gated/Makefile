@@ -1,3 +1,6 @@
+# Docker image for Naylence Agent SDK
+DOCKER_IMAGE := naylence/agent-sdk-python:0.3.14
+
 .DEFAULT_GOAL := start
 
 # Handle verbose mode via VERBOSE variable or verbose target
@@ -14,14 +17,37 @@ stop:
 
 run:
 	@if [ "$(VERBOSE)" = "true" ]; then \
-		FAME_SHOW_ENVELOPES=true python client.py; \
+		docker run --rm \
+		-v "$(shell pwd):/work:ro" \
+		-v "$(shell basename "$(shell pwd)")_caddy-data:/caddy-data:ro" \
+		-w /work \
+		--network "$(shell basename "$(shell pwd)")_naylence-net" \
+		--env-file config/.env.client \
+		-e FAME_SHOW_ENVELOPES=true \
+		$(DOCKER_IMAGE) \
+		python client.py; \
 	else \
+		docker run --rm \
+		-v "$(shell pwd):/work:ro" \
+		-v "$(shell basename "$(shell pwd)")_caddy-data:/caddy-data:ro" \
+		-w /work \
+		--network "$(shell basename "$(shell pwd)")_naylence-net" \
+		--env-file config/.env.client \
+		$(DOCKER_IMAGE) \
 		python client.py; \
 	fi
 
 # Verbose mode via explicit target
 run-verbose:
-	@FAME_SHOW_ENVELOPES=true python client.py
+	@docker run --rm \
+	-v "$(shell pwd):/work:ro" \
+	-v "$(shell basename "$(shell pwd)")_caddy-data:/caddy-data:ro" \
+	-w /work \
+	--network "$(shell basename "$(shell pwd)")_naylence-net" \
+	--env-file config/.env.client \
+	-e FAME_SHOW_ENVELOPES=true \
+	$(DOCKER_IMAGE) \
+	python client.py
 
 # Alternative verbose target
 verbose:
@@ -30,6 +56,12 @@ verbose:
 clean: stop
 	@echo "🧹 Cleaning generated files..."
 	@cd config && rm -rf .env.client .env.agent .env.oauth2-server .env.sentinel
-	@rm -rf ../.secrets
-	@rm -rf config/caddy/data
-	@echo "✅ Cleaned generated .env files and secrets directory"
+	@echo "🧹 Cleaning secrets directory with Docker..."
+	@docker run --rm \
+		-v "$(shell pwd)/../..:/work" \
+		-w /work \
+		$(DOCKER_IMAGE) \
+		rm -rf ./security/.secrets 2>/dev/null || true
+	@echo "🧹 Removing Caddy named volume..."
+	@docker volume rm "$(shell basename "$(shell pwd)")_caddy-data" 2>/dev/null || true
+	@echo "✅ Cleaned generated .env files, secrets directory, and Caddy volume"

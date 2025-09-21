@@ -82,9 +82,9 @@ jobs:
         #   - examples/persistence/storage-provider
           # Security examples
           - examples/security/advanced
-        #   - examples/security/gated
+          - examples/security/gated
         #   - examples/security/http-connector
-        #   - examples/security/overlay
+          - examples/security/overlay
         #   - examples/security/stickiness
       fail-fast: false
 

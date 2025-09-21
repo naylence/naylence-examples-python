@@ -5,9 +5,6 @@ from naylence.fame.core import FameFabric
 
 from naylence.agent import Agent, configs
 from naylence.fame.util.logging import enable_logging
-from dotenv import load_dotenv
-
-load_dotenv("config/.env.client")
 
 enable_logging(log_level="warning")
 
