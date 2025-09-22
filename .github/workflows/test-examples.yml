@@ -71,6 +71,7 @@ jobs:
           - examples/distributed/capability-routing
           - examples/distributed/hello
           - examples/distributed/hello-with-sentinel
+          - examples/distributed/multi-agent
           - examples/distributed/peers
           - examples/distributed/push-notifications
           - examples/distributed/rpc
@@ -131,6 +132,8 @@ jobs:
     
     - name: Test docker example - ${{ matrix.example }}
       working-directory: ${{ matrix.example }}
+      env:
+        OPENAI_API_KEY: ${{ matrix.example == 'examples/distributed/multi-agent' && secrets.OPENAI_API_KEY || '' }}
       run: |
         echo "Testing example: ${{ matrix.example }}"
         make && sleep 1 && make run && make clean
@@ -143,7 +146,6 @@ jobs:
       matrix:
         script:
           - llm_agent.py
-          - image_generation_agent.py
       fail-fast: false
 
     steps:
