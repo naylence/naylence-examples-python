@@ -10,7 +10,13 @@ stop:
 	docker compose down --remove-orphans
 
 run:
-	@set -a; . config/.env.client; set +a; python client.py
+	@docker run --rm \
+	-v "$(shell pwd):/work:ro" \
+	-w /work \
+	--network "$(shell basename "$(shell pwd)")_naylence-net" \
+	--env-file config/.env.client \
+	naylence/agent-sdk-python:0.3.14 \
+	python client.py
 	@echo
 	@echo "Waiting a few seconds for message-agent to process..."
 	@sleep 5
@@ -18,7 +24,14 @@ run:
 	@docker compose logs message-agent
 
 run-verbose:
-	@set -a; . config/.env.client; set +a; FAME_SHOW_ENVELOPES=true python client.py
+	@docker run --rm \
+	-v "$(shell pwd):/work:ro" \
+	-w /work \
+	--network "$(shell basename "$(shell pwd)")_naylence-net" \
+	--env-file config/.env.client \
+	-e FAME_SHOW_ENVELOPES=true \
+	naylence/agent-sdk-python:0.3.14 \
+	python client.py
 	@echo
 	@echo "Waiting a few seconds for message-agent to process..."
 	@sleep 5
@@ -31,7 +44,9 @@ logs:
 
 clean: stop
 	@echo "🧹 Cleaning generated files..."
-	@rm -rf ../../security/.secrets
+	@echo "🧹 Cleaning secrets directory with Docker..."
+	@docker run --rm -v "$(shell cd ../../security && pwd)/.secrets:/work/.secrets" alpine:latest sh -c "rm -rf /work/.secrets" 2>/dev/null || rm -rf ../../security/.secrets 2>/dev/null || true
 	@rm -rf config/.env.agent config/.env.client
-	@rm -rf data
-	@echo "✅ Cleaned generated .env files and secrets directory"
+	@echo "🧹 Cleaning data directory with Docker..."
+	@docker run --rm -v "$(shell pwd)/data:/work/data" alpine:latest sh -c "rm -rf /work/data" 2>/dev/null || rm -rf data 2>/dev/null || true
+	@echo "✅ Cleaned generated .env files, secrets directory, and data directory"

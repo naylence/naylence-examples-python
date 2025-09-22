@@ -11,7 +11,7 @@ services:
       - "443:443"
     volumes:
       - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./config/caddy/data:/data
+      - caddy-data:/data
     # depends_on:
     #   - sentinel-internal
     networks:
@@ -20,6 +20,25 @@ services:
           - sentinel
           - oauth2-server
           - otel-collector
+    healthcheck:
+      test: |
+        sh -c '
+        # Check if certificates exist
+        if [ ! -f "/data/caddy/pki/authorities/local/root.crt" ]; then
+          echo "Root certificate not found"
+          exit 1
+        fi
+        
+        # Ensure certificates have proper permissions for sharing
+        chmod -R 755 /data/caddy/pki 2>/dev/null || true
+        
+        # Test HTTPS endpoints
+        wget --no-check-certificate -q --spider https://localhost:443 2>/dev/null || curl -k -f -s https://localhost:443 >/dev/null
+        '
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 1s
 
   # OAuth2 server - shouldn't be connected to directly.
   # This is for dev purposes only, do not use in production
@@ -30,8 +49,13 @@ services:
     command: ["python", "-m", "naylence.fame.fastapi.oauth2_server"]
     networks:
       - naylence-net
+    volumes:
+      - caddy-data:/caddy-data:ro
     env_file:
       - config/.env.oauth2-server
+    depends_on:
+      caddy:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8099/.well-known/openid-configuration')"]
       interval: 5s
@@ -46,6 +70,7 @@ services:
     volumes:
       - .:/work:ro
       - ./config/otel-collector-config.yml:/etc/otel-collector-config.yml
+      - caddy-data:/caddy-data:ro
     ports:
       - "14317:4317"   # OTLP gRPC receiver (using different external port)
       - "14318:4318"   # OTLP HTTP receiver (using different external port)
@@ -54,10 +79,12 @@ services:
         condition: service_started
       oauth2-server-internal:
         condition: service_healthy
+      caddy:
+        condition: service_healthy
     networks:
       - naylence-net
     environment:
-      - SSL_CERT_FILE=/work/config/caddy/data/caddy/pki/authorities/local/root.crt
+      - SSL_CERT_FILE=/caddy-data/caddy/pki/authorities/local/root.crt
 
   # Jaeger 2 for tracing
   jaeger:
@@ -76,6 +103,7 @@ services:
     volumes:
       - .:/work:ro
       - ./config/sentinel-config.yml:/etc/fame/fame-config.yml:ro
+      - caddy-data:/caddy-data:ro
     working_dir: /work
     command: ["python", "sentinel.py"]
     # ports:
@@ -83,6 +111,8 @@ services:
     depends_on:
       otel-collector-internal:
         condition: service_started
+      caddy:
+        condition: service_healthy
     networks:
       - naylence-net
     stop_signal: SIGINT
@@ -103,6 +133,7 @@ services:
     volumes:
       - .:/work:ro
       - ./config/agent-config.yml:/etc/fame/fame-config.yml:ro
+      - caddy-data:/caddy-data:ro
     working_dir: /work
     command: ["python", "math_agent.py"]
     depends_on:
@@ -110,12 +141,17 @@ services:
         condition: service_healthy
       otel-collector-internal:
         condition: service_started
+      caddy:
+        condition: service_healthy
     networks:
       - naylence-net
     env_file:
       - config/.env.agent
 
   #   restart: unless-stopped
+
+volumes:
+  caddy-data:
 
 networks:
   naylence-net:

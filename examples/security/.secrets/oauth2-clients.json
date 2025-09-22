@@ -1,0 +1,9 @@
+{
+  "clients": [
+    {
+      "client_id": "client-zio8r89i42s7",
+      "client_secret": "s-lk0arisaxqh4",
+      "audience": "fame.fabric"
+    }
+  ]
+}

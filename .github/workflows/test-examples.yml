@@ -13,12 +13,12 @@ jobs:
     strategy:
       matrix:
         example:
-        #   - echo_agent.py
-        #   - function_as_agent.py
-        #   - rpc_agent.py
-        #   - agent_with_bg_task.py
-        #   - a2a_agent.py
-        #   - agent_ping_pong.py
+          - echo_agent.py
+          - function_as_agent.py
+          - rpc_agent.py
+          - agent_with_bg_task.py
+          - a2a_agent.py
+          - agent_ping_pong.py
           - hello.py
       fail-fast: false
 
@@ -62,24 +62,24 @@ jobs:
     strategy:
       matrix:
         example:
-        #   # Delivery examples
-        #   - examples/delivery/agent-crash-recovery
-        #   - examples/delivery/retry-on-no-ack-received
-        #   # Distributed examples (excluding LLM-based ones)
-        #   - examples/distributed/biomes
-        #   - examples/distributed/cancellable
-        #   - examples/distributed/capability-routing
-        #   - examples/distributed/hello
-        #   - examples/distributed/hello-with-sentinel
-        #   - examples/distributed/peers
-        #   - examples/distributed/push-notifications
-        #   - examples/distributed/rpc
-        #   - examples/distributed/status-subscription
-        #   # Monitoring examples
-        #   - examples/monitoring/open-telemetry
-        #   # Persistence examples
-        #   - examples/persistence/agent-state
-        #   - examples/persistence/storage-provider
+          # Delivery examples
+          - examples/delivery/agent-crash-recovery
+          - examples/delivery/retry-on-no-ack-received
+          # Distributed examples (excluding LLM-based ones)
+          - examples/distributed/biomes
+          - examples/distributed/cancellable
+          - examples/distributed/capability-routing
+          - examples/distributed/hello
+          - examples/distributed/hello-with-sentinel
+          - examples/distributed/peers
+          - examples/distributed/push-notifications
+          - examples/distributed/rpc
+          - examples/distributed/status-subscription
+          # Monitoring examples
+          - examples/monitoring/open-telemetry
+          # Persistence examples
+          - examples/persistence/agent-state
+          - examples/persistence/storage-provider
           # Security examples
           - examples/security/advanced
           - examples/security/gated

@@ -27,6 +27,7 @@ run:
 	@docker run --rm \
 	-v "$(shell pwd):/work:ro" \
 	-v "$(shell pwd)/config/client-config.yml:/etc/fame/fame-config.yml:ro" \
+	-v "$(shell basename "$(shell pwd)")_caddy-data:/caddy-data:ro" \
 	-w /work \
 	--network "$(shell basename "$(shell pwd)")_naylence-net" \
 	--env-file config/.env.client \
@@ -37,6 +38,7 @@ run-verbose:
 	@docker run --rm \
 	-v "$(shell pwd):/work:ro" \
 	-v "$(shell pwd)/config/client-config.yml:/etc/fame/fame-config.yml:ro" \
+	-v "$(shell basename "$(shell pwd)")_caddy-data:/caddy-data:ro" \
 	-w /work \
 	--network "$(shell basename "$(shell pwd)")_naylence-net" \
 	--env-file config/.env.client \
@@ -47,6 +49,10 @@ run-verbose:
 clean: stop
 	@echo "🧹 Cleaning generated files..."
 	@cd config && rm -rf .env.client .env.agent .env.oauth2-server .env.sentinel
-	@rm -rf ../.secrets
-	@rm -rf config/caddy/data
-	@echo "✅ Cleaned generated .env files and secrets directory"
+	@echo "🧹 Cleaning secrets directory with Docker..."
+	@docker run --rm -v "$(shell cd .. && pwd)/.secrets:/work/.secrets" alpine:latest sh -c "rm -rf /work/.secrets" 2>/dev/null || rm -rf ../.secrets 2>/dev/null || true
+	@echo "🧹 Cleaning bind-mounted caddy data..."
+	@docker run --rm -v "$(shell pwd)/config/caddy:/work/caddy" alpine:latest sh -c "rm -rf /work/caddy/data" 2>/dev/null || rm -rf config/caddy/data 2>/dev/null || true
+	@echo "🧹 Removing Caddy named volume..."
+	@docker volume rm "$(shell basename "$(shell pwd)")_caddy-data" 2>/dev/null || true
+	@echo "✅ Cleaned generated .env files, secrets directory, caddy data, and named volume"
