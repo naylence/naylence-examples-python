@@ -36,7 +36,7 @@ async def qa_agent(payload: Any, id: Any) -> Any:
         {"role": "user", "content": str(payload)},
     ]
     # Call AsyncOpenAI’s chat.completions.create(...)
-    response = await client.chat.completions.create(
+    response = await client.chat.completions.create( # type: ignore
         model="gpt-5-mini",
         messages=messages,  # type: ignore
     )

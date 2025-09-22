@@ -159,16 +159,6 @@ jobs:
       run: |
         echo "Testing LLM example: ${{ matrix.script }}"
         make build
-        if [[ "${{ matrix.script }}" == "image_generation_agent.py" ]]; then
-          # Image generation with custom Docker run to pass arguments
-          docker run --rm \
-            -v .:/work -w /work \
-            -e OPENAI_API_KEY="${OPENAI_API_KEY}" \
-            simple-llm-examples \
-            python image_generation_agent.py --prompt "A simple test image for CI" --no-browser
-        else
-          # Standard execution for other scripts using CI target (no TTY)
-          timeout 60s make run-ci ${{ matrix.script }}
-        fi
+        timeout 60s make run-ci ${{ matrix.script }}
         make clean
       timeout-minutes: 5
