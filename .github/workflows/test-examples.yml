@@ -167,8 +167,8 @@ jobs:
             simple-llm-examples \
             python image_generation_agent.py --prompt "A simple test image for CI" --no-browser
         else
-          # Standard execution for other scripts
-          timeout 60s make run ${{ matrix.script }}
+          # Standard execution for other scripts using CI target (no TTY)
+          timeout 60s make run-ci ${{ matrix.script }}
         fi
         make clean
       timeout-minutes: 5

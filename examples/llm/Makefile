@@ -19,6 +19,9 @@ run:
 run-verbose:
 	@docker run --rm -it -v .:/work -w /work -e OPENAI_API_KEY=${OPENAI_API_KEY} simple-llm-examples python $(SCRIPT)
 
+run-ci:
+	@docker run --rm -v .:/work -w /work -e OPENAI_API_KEY=${OPENAI_API_KEY} simple-llm-examples python $(SCRIPT)
+
 clean: stop
 	@echo "🧹 Nothing to clean"
 
