@@ -135,3 +135,40 @@ jobs:
         echo "Testing example: ${{ matrix.example }}"
         make && sleep 1 && make run && make clean
       timeout-minutes: 10
+
+  test-llm-examples:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        script:
+          - llm_agent.py
+          - image_generation_agent.py
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Test LLM example - ${{ matrix.script }}
+      working-directory: examples/llm
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        echo "Testing LLM example: ${{ matrix.script }}"
+        make build
+        if [[ "${{ matrix.script }}" == "image_generation_agent.py" ]]; then
+          # Image generation with custom Docker run to pass arguments
+          docker run --rm \
+            -v .:/work -w /work \
+            -e OPENAI_API_KEY="${OPENAI_API_KEY}" \
+            simple-llm-examples \
+            python image_generation_agent.py --prompt "A simple test image for CI" --no-browser
+        else
+          # Standard execution for other scripts
+          timeout 60s make run ${{ matrix.script }}
+        fi
+        make clean
+      timeout-minutes: 5
