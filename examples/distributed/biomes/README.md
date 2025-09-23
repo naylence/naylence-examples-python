@@ -2,6 +2,8 @@
 
 This example demonstrates a **hierarchical fabric** where a **main (parent) sentinel** fronts multiple **child sentinels**, each hosting its own agents. In Naylence, everything “behind” a sentinel is a **biome**. Here, two child biomes hang off a single main sentinel. It also showcases **deep‑to‑deep routing** by delegating a method call from one child biome to another through the main sentinel.
 
+---
+Flow:
 ```
 client  →  main sentinel  →  child sentinel 1  →  agent 1
                        └→  child sentinel 2  →  agent 2
@@ -19,6 +21,11 @@ The client attaches **only** to the main sentinel. Address resolution and routin
 * **Mixed capabilities:** one agent serves arithmetic RPC (add/multiply), the other serves a **streaming** Fibonacci endpoint (and delegated multiply).
 * **Simple admission (dev):** children and agents use **direct (open)** admission for clarity; production can switch to **gated/overlay/strict‑overlay** with the same topology.
 
+---
+> ⚠️ **Security note:** This demo is intentionally insecure for clarity. There is **no auth, TLS, or overlay security** enabled here. Later examples will layer in secure admission, identities, and sealed channels.
+
+---
+> **For curious souls:** Naylence ships with FastAPI/Uvicorn under the hood but you’ll never need to see or configure it. All transport, routing, and addressing are handled by the fabric itself. No boilerplate servers, no route wiring, just `make start` and go.
 ---
 
 ## Files
