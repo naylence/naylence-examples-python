@@ -10,6 +10,8 @@ In this demo, the agent is hosted directly on a **sentinel node**, and the clien
 > ⚠️ **Security note:** This example does **not** feature any security mechanisms. It is kept intentionally minimal for learning purposes. Later examples in this repository will introduce secure configurations.
 
 ---
+> **For curious souls:** Naylence ships with FastAPI/Uvicorn under the hood but you’ll never need to see or configure it. All transport, routing, and addressing are handled by the fabric itself. No boilerplate servers, no route wiring, just `make start` and go.
+---
 
 ## Components
 

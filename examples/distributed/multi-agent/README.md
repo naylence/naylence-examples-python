@@ -1,14 +1,12 @@
 # Multi‑Agent Text Analysis Pipeline
 
-This example demonstrates a **distributed multi‑agent pipeline** with Naylence. Multiple agents collaborate to analyze text: one agent summarizes, ano## Troubleshooting
+This example demonstrates a **distributed multi‑agent pipeline** using Naylence. Multiple agents work together to analyze text: one agent generates a summary, another evaluates sentiment, and a third orchestrates the workflow by coordinating the other two agents.
 
-* **Missing API key** → **REQUIRED:** Set `OPENAI_API_KEY` in your shell before running. Get your key from https://platform.openai.com/api-keys
-* **Agents don't connect** → start sentinel first; ensure `FAME_DIRECT_ADMISSION_URL` is set.
-* **Results empty** → check OpenAI model availability; override with `MODEL_NAME` env var.
-* **API quota exceeded** → check your OpenAI account usage and billing at https://platform.openai.com/usageevaluates sentiment, and a third orchestrates them and combines results. A client then consumes the aggregated analysis.
 
 > 🔑 **Requirements:** This example requires an **OpenAI API key** as the agents use OpenAI's API for text analysis.
+---
 
+Flow:
 ```
 request: client ──▶ sentinel ──▶ analysis-agent ──┬─▶ summarizer-agent
                                                   └─▶ sentiment-agent
@@ -17,6 +15,8 @@ reply:   client ◀─ sentinel ◀───────────────
 
 > ⚠️ **Security note:** This demo is intentionally **insecure** (no TLS, no identities, no overlay encryption). Later examples introduce secure admission, envelope signing, and overlay security.
 
+---
+> **For curious souls:** Naylence ships with FastAPI/Uvicorn under the hood but you’ll never need to see or configure it. All transport, routing, and addressing are handled by the fabric itself. No boilerplate servers, no route wiring, just `make start` and go.
 ---
 
 ## What you’ll learn
