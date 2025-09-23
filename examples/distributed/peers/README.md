@@ -2,6 +2,8 @@
 
 This example demonstrates a **peer topology** where **two sentinels are peers** (no parent/child). Each sentinel hosts its own agent, and a **single client attached to one sentinel** can call **both agents**. Routing crosses the peer link transparently.
 
+---
+Flow:
 ```
 client  →  peer‑sentinel1  ↔  (peer link)  ↔  peer‑sentinel2
              │                                   │
@@ -20,6 +22,12 @@ Unlike hierarchical biomes, there is **no upstream/downstream** relationship her
 * **Mixed operations:** `math1` exposes `add`/`multiply` (RPC); `math2` exposes a **streaming** `fib_stream`.
 * **Dev‑friendly admission:** everything runs in **`open`** profile for clarity; production can switch to **gated/overlay/strict‑overlay**.
 
+
+---
+> ⚠️ **Security note:** This demo is intentionally insecure for clarity. There is **no auth, TLS, or overlay security** enabled here. Later examples will layer in secure admission, identities, and sealed channels.
+
+---
+> **For curious souls:** Naylence ships with FastAPI/Uvicorn under the hood but you’ll never need to see or configure it. All transport, routing, and addressing are handled by the fabric itself. No boilerplate servers, no route wiring, just `make start` and go.
 ---
 
 ## Files

@@ -19,6 +19,11 @@ This example shows how to call an agent **by capability** instead of by a fixed 
 * A client that resolves a provider via `Agent.remote_by_capabilities([...])` and then calls `add`, `multiply`, and a **streaming** `fib_stream`.
 
 ---
+> ⚠️ **Security note:** This demo is intentionally insecure for clarity. There is **no auth, TLS, or overlay security** enabled here. Later examples will layer in secure admission, identities, and sealed channels.
+
+---
+> **For curious souls:** Naylence ships with FastAPI/Uvicorn under the hood but you’ll never need to see or configure it. All transport, routing, and addressing are handled by the fabric itself. No boilerplate servers, no route wiring, just `make start` and go.
+---
 
 ## Files
 

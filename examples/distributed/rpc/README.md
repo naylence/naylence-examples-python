@@ -9,8 +9,11 @@ reply:   client ◀─ sentinel ◀─ math-agent
 
 The goal is to show that methods exposed with the **`@operation`** decorator behave the **same** in distributed mode as they do locally — including **renaming** RPC endpoints and **streaming** results.
 
-> ⚠️ **Security note:** This demo is intentionally **insecure** for clarity (no auth, TLS, or overlay security). Later examples add secure admission, identities, envelope signing, and sealed channels.
+---
+> ⚠️ **Security note:** This demo is intentionally insecure for clarity. There is **no auth, TLS, or overlay security** enabled here. Later examples will layer in secure admission, identities, and sealed channels.
 
+---
+> **For curious souls:** Naylence ships with FastAPI/Uvicorn under the hood but you’ll never need to see or configure it. All transport, routing, and addressing are handled by the fabric itself. No boilerplate servers, no route wiring, just `make start` and go.
 ---
 
 ## What’s inside

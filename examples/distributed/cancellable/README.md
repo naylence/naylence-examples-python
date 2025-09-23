@@ -2,14 +2,19 @@
 
 This example demonstrates **Agent‑to‑Agent (A2A) task APIs** in a **distributed** topology. A client starts a long‑running task on an agent, subscribes to task updates (status + artifacts), reacts to progress, and then **cancels** the task mid‑flight.
 
+---
+Flow:
 ```
 request: client ──▶ sentinel ──▶ cancellable-agent
 reply:   client ◀─ sentinel ◀─ cancellable-agent
 updates: client ◀─ sentinel ◀─ cancellable-agent (status/artifacts)
 ```
 
-> ⚠️ **Security note:** This demo is intentionally **insecure** (no auth, TLS, or overlay encryption) to keep the A2A patterns clear. Later examples add secure admission, identities, and sealed channels.
+---
+> ⚠️ **Security note:** This demo is intentionally insecure for clarity. There is **no auth, TLS, or overlay security** enabled here. Later examples will layer in secure admission, identities, and sealed channels.
 
+---
+> **For curious souls:** Naylence ships with FastAPI/Uvicorn under the hood but you’ll never need to see or configure it. All transport, routing, and addressing are handled by the fabric itself. No boilerplate servers, no route wiring, just `make start` and go.
 ---
 
 ## What you’ll learn
