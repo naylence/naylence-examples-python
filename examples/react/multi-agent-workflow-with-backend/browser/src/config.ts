@@ -1,4 +1,3 @@
-import { generateId } from '@naylence/core';
 
 // Get WebSocket URL from env.js
 declare global {
@@ -14,7 +13,6 @@ export const clientConfig = {
   rootConfig: {
     plugins: ['@naylence/runtime'],
     node: {
-      id: `browser-client-${generateId()}`,
       hasParent: true,
       requestedLogicals: ['fame.fabric'],
       security: {
