@@ -1,0 +1,95 @@
+services:
+  # Sentinel service - runs the central coordinator on port 8000
+  sentinel:
+    image: naylence/agent-sdk-python:0.3.21
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentinel.py"]
+    ports:
+      - "8000:8000"
+    networks:
+      - naylence-net
+    # environment:
+    #   - FAME_FLOW_CONTROL=0
+    stop_signal: SIGINT
+    stop_grace_period: 1s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 0.5s
+      timeout: 1s
+      retries: 10
+      start_period: 0.5s
+      start_interval: 1s
+
+  # Workflow Agent service - orchestrates the text analysis workflow
+  workflow-agent:
+    image: naylence/agent-sdk-python:0.3.21
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "workflow_agent.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+      # - FAME_FLOW_CONTROL=0
+    restart: unless-stopped
+
+  # Stats Agent service - calculates text statistics
+  stats-agent:
+    image: naylence/agent-sdk-python:0.3.21
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "stats_agent.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+      # - FAME_FLOW_CONTROL=0
+    restart: unless-stopped
+
+  # Keywords Agent service - extracts keywords from text
+  keywords-agent:
+    image: naylence/agent-sdk-python:0.3.21
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "keywords_agent.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+      # - FAME_FLOW_CONTROL=0
+    restart: unless-stopped
+
+  # Sentences Agent service - extracts and analyzes sentences
+  sentences-agent:
+    image: naylence/agent-sdk-python:0.3.21
+    volumes:
+      - .:/work:ro
+    working_dir: /work
+    command: ["python", "sentences_agent.py"]
+    depends_on:
+      sentinel:
+        condition: service_healthy
+    networks:
+      - naylence-net
+    environment:
+      - FAME_DIRECT_ADMISSION_URL=ws://sentinel:8000/fame/v1/attach/ws/downstream
+      # - FAME_FLOW_CONTROL=0
+    restart: unless-stopped
+
+networks:
+  naylence-net:
+    driver: bridge
