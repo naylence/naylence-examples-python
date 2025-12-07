@@ -63,7 +63,7 @@ This will:
 In a separate terminal:
 
 ```bash
-make run-frontend
+make run-browser
 ```
 
 This will:
