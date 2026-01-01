@@ -1,0 +1,53 @@
+version: '1'
+type: AdvancedAuthorizationPolicy
+
+rules:
+  - id: connect
+    action: connect
+    effect: allow
+
+  - id: access-math-agent-from-downstream
+    origin_type: downstream
+    frame_type:
+      - Data
+    address: 
+      - math@fame.fabric
+    action: forward_downstream
+    effect: allow
+    when: |
+      is_encrypted() && claims.aud == "/" + node.id
+
+  - id: open-secure-channel
+    origin_type: downstream
+    frame_type:
+      - SecureOpen
+    address: 
+      - math@fame.fabric
+    action: forward_downstream
+    effect: allow
+    when: |
+      is_signed() && claims.aud == "/" + node.id
+
+  - id: allow-public-key-exchange
+    origin_type: downstream
+    frame_type:
+      - KeyRequest
+      - KeyAnnounce
+    action: forward_downstream
+    effect: allow
+    when: |
+      is_signed() && claims.aud == "/" + node.id
+
+  - id: allow-rpc-replies-from-downstream
+    origin_type: downstream
+    address: 
+      - __rpc__*@/**
+    action: forward_downstream
+    effect: allow
+
+  - id: allow-sys-messages-from-downstream
+    origin_type: downstream
+    address: 
+      - __sys__*@/**
+    action: forward_downstream
+    effect: allow
